@@ -5,7 +5,7 @@ import { useChatStore } from '../store/useChatStore.js'
 
 const ChatContainer = () => {
 
-  const { messages, getMessages, isMessagesLoading, selectedUser } = useChatStore()
+  const { getMessages, isMessagesLoading, selectedUser } = useChatStore()
 
   useEffect(() => {
     if (selectedUser) {
