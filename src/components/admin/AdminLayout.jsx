@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  MessageSquare, 
-  Bell, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Users,
+  MessageSquare,
+  Bell,
+  Settings,
   LogOut,
   FileText,
   CheckSquare,
@@ -35,40 +35,38 @@ export default function AdminLayout() {
     <div className="flex h-screen bg-gray-50">
       {/* Mobile menu overlay */}
       {mobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={closeMobileMenu}
         />
       )}
 
       {/* Sidebar */}
-      <div 
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-white transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-white transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center justify-between border-b px-4 md:justify-center">
             <h1 className="text-xl font-bold text-primary">Admin Panel</h1>
-            <button 
+            <button
               onClick={toggleMobileMenu}
               className="rounded-md p-1 text-gray-500 hover:bg-gray-100 md:hidden"
             >
               <X className="h-6 w-6" />
             </button>
           </div>
-          
+
           <div className="flex flex-1 flex-col overflow-y-auto p-4">
             <nav className="flex-1 space-y-1">
               {adminNavItems.map((item) => (
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
-                    location.pathname === item.path
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                  className={`flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors ${location.pathname === item.path
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-gray-600 hover:bg-gray-100'
+                    }`}
                   onClick={closeMobileMenu}
                 >
                   <span className="mr-3">{item.icon}</span>
@@ -76,9 +74,9 @@ export default function AdminLayout() {
                 </Link>
               ))}
             </nav>
-            
+
             <div className="border-t pt-4">
-              <button 
+              <button
                 onClick={logout}
                 className="flex w-full items-center rounded-lg px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
               >
@@ -97,7 +95,7 @@ export default function AdminLayout() {
           <h1 className="text-lg font-semibold">
             {adminNavItems.find(item => location.pathname === item.path)?.name || 'Admin'}
           </h1>
-          <button 
+          <button
             onClick={toggleMobileMenu}
             className="rounded-md p-2 text-gray-500 hover:bg-gray-100"
           >

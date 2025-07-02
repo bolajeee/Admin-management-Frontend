@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Users, MessageSquare, Clock, AlertTriangle } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -13,7 +13,7 @@ export default function DashboardPage() {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
-      
+
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         {stats.map((stat, index) => (
