@@ -66,7 +66,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="grid gap-2">
               <button className="w-full text-left p-3 rounded-lg hover:bg-primary/10 transition-colors text-base-content">
-                Send Company-wide Announcement
+                Send Company-wide Memo
               </button>
               <button className="w-full text-left p-3 rounded-lg hover:bg-primary/10 transition-colors text-base-content">
                 Create New Task
