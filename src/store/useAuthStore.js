@@ -11,6 +11,7 @@ export const useAuthStore = create(
       isLoggingIn: false,
       isUpdatingProfile: false,
       isCheckingAuth: true,
+      isDeletingUser: false,
       onlineUsers: [],
 
 
@@ -59,7 +60,7 @@ export const useAuthStore = create(
           toast.success("Login successful");
         } catch (error) {
           console.error("Error in login:", error.response?.data?.message);
-          toast.error("Login failed");
+          toast.error("Error in login", error);
         } finally {
           set({ isLoggingIn: false });
         }
@@ -76,6 +77,21 @@ export const useAuthStore = create(
           toast.error(error?.response?.data?.message || "Profile update failed");
         } finally {
           set({ isUpdatingProfile: false });
+        }
+      },
+
+      deleteUser: async (userId) => {
+        set({ isDeletingUser: true });
+        try {
+          await axiosInstance.delete(`/auth/deleteUser/${userId}`);
+          set((state) => ({
+            authUser: state.authUser?._id === userId ? null : state.authUser,
+          }));
+          toast.success("User deleted successfully");
+        } catch (error) {
+          console.error("Error in deleteUser:", error);
+          toast.error("Failed to delete user");
+          set({ isDeletingUser: false });
         }
       },
     }),

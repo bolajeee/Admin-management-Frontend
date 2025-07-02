@@ -1,8 +1,11 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Users, MessageSquare, Clock, AlertTriangle } from 'lucide-react';
+import { useThemeStore } from '../../store/useThemeStore';
 
 export default function DashboardPage() {
+  const { theme } = useThemeStore();
+
   const stats = [
     { title: 'Total Employees', value: '1,234', icon: <Users className="h-6 w-6" /> },
     { title: 'Active Memos', value: '42', icon: <AlertTriangle className="h-6 w-6" /> },
@@ -11,8 +14,8 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+    <div className="p-6" data-theme={theme}>
+      <h1 className="text-3xl font-bold mb-8 pt-[60px]">Admin Dashboard</h1>
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
