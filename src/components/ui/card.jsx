@@ -1,8 +1,10 @@
 import React from "react";
+import { useThemeStore } from '../../store/useThemeStore';
 
 export function Card({ children, className = "", ...props }) {
+    const { theme } = useThemeStore();
     return (
-        <div className={`bg-white rounded-lg shadow p-6 ${className}`} {...props}>
+        <div className={`rounded-lg shadow p-6 ${theme === 'dark' ? 'bg-base-200' : 'bg-white'} ${className}`} data-theme={theme} {...props}>
             {children}
         </div>
     );
@@ -10,7 +12,7 @@ export function Card({ children, className = "", ...props }) {
 
 export function CardHeader({ children, className = "", ...props }) {
     return (
-        <div className={`border-b pb-4 mb-4 ${className}`} {...props}>
+        <div className={`border-b pb-4 mb-4 border-base-300 ${className}`} {...props}>
             {children}
         </div>
     );
@@ -18,7 +20,7 @@ export function CardHeader({ children, className = "", ...props }) {
 
 export function CardTitle({ children, className = "", ...props }) {
     return (
-        <h3 className={`text-lg font-semibold ${className}`} {...props}>
+        <h3 className={`text-lg font-semibold text-base-content ${className}`} {...props}>
             {children}
         </h3>
     );
@@ -26,7 +28,7 @@ export function CardTitle({ children, className = "", ...props }) {
 
 export function CardContent({ children, className = "", ...props }) {
     return (
-        <div className={`mt-2 ${className}`} {...props}>
+        <div className={`mt-2 text-base-content ${className}`} {...props}>
             {children}
         </div>
     );

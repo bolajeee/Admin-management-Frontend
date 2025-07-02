@@ -64,11 +64,10 @@ export default function AdminLayout() {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
-                    location.pathname === item.path
+                  className={`flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${location.pathname === item.path
                       ? 'bg-primary/10 text-primary shadow-sm scale-[1.03]'
-                      : 'text-base-content/70 hover:bg-primary/5 hover:text-primary'
-                  }`}
+                      : 'text-base-content hover:bg-primary/5 hover:text-primary'
+                    }`}
                   onClick={closeMobileMenu}
                 >
                   <span className="mr-3">{item.icon}</span>

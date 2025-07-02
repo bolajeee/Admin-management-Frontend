@@ -22,7 +22,7 @@ export default function DashboardPage() {
         {stats.map((stat, index) => (
           <Card key={index} className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-base-content">
                 {stat.title}
               </CardTitle>
               <div className="text-primary">
@@ -30,7 +30,7 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-2xl font-bold text-base-content">{stat.value}</div>
             </CardContent>
           </Card>
         ))}
@@ -50,8 +50,8 @@ export default function DashboardPage() {
                     <MessageSquare className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">New message from John Doe</p>
-                    <p className="text-xs text-muted-foreground">2 minutes ago</p>
+                    <p className="text-sm font-medium text-base-content">New message from John Doe</p>
+                    <p className="text-xs text-base-content/80">2 minutes ago</p>
                   </div>
                 </div>
               ))}
@@ -65,13 +65,13 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-2">
-              <button className="w-full text-left p-3 rounded-lg hover:bg-muted/50 transition-colors">
+              <button className="w-full text-left p-3 rounded-lg hover:bg-primary/10 transition-colors text-base-content">
                 Send Company-wide Announcement
               </button>
-              <button className="w-full text-left p-3 rounded-lg hover:bg-muted/50 transition-colors">
+              <button className="w-full text-left p-3 rounded-lg hover:bg-primary/10 transition-colors text-base-content">
                 Create New Task
               </button>
-              <button className="w-full text-left p-3 rounded-lg hover:bg-muted/50 transition-colors">
+              <button className="w-full text-left p-3 rounded-lg hover:bg-primary/10 transition-colors text-base-content">
                 View System Logs
               </button>
             </div>

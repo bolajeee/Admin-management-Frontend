@@ -43,7 +43,7 @@ export default function EmployeesPage() {
 
   return (
     <div data-theme={theme}>
-      <h1 className="text-2xl font-bold mb-6">Manage Employees & Admins</h1>
+      <h1 className="text-2xl font-bold mb-6 pt-[100px]">Manage Employees & Admins</h1>
       <div className="mb-6 flex justify-end">
         <button className="btn btn-primary flex items-center gap-2">
           <Plus className="h-4 w-4" /> Add Employee/Admin
