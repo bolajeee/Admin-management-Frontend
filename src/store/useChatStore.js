@@ -89,14 +89,10 @@ export const useChatStore = create((set) => ({
         set({ isMessagesLoading: true });
         try {
             const formData = new FormData();
-            formData.append("receiverId", receiverId);
             if (text) formData.append("text", text);
             if (image) formData.append("image", image);
 
-            const response = await axiosInstance.post("/messages/send", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-            // Optionally, update messages state with the new message
+            const response = await axiosInstance.post(`/messages/user/${receiverId}`, formData);
             set((state) => ({ messages: [...state.messages, response.data] }));
             toast.success("Message sent successfully");
         } catch (error) {
