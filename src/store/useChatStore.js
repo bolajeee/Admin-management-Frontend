@@ -76,6 +76,35 @@ export const useChatStore = create((set) => ({
     setSelectedUser:
         (selectedUser) => {
             set({ selectedUser })
+        },
+
+    /**
+     * Send a message (text and/or image) to a user.
+     * @param {Object} params
+     * @param {string} params.receiverId - The user ID to send the message to
+     * @param {string} [params.text] - The text content of the message
+     * @param {File} [params.image] - The image file to send (optional)
+     */
+    sendMessage: async ({ receiverId, text, image }) => {
+        set({ isMessagesLoading: true });
+        try {
+            const formData = new FormData();
+            formData.append("receiverId", receiverId);
+            if (text) formData.append("text", text);
+            if (image) formData.append("image", image);
+
+            const response = await axiosInstance.post("/messages/send", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            // Optionally, update messages state with the new message
+            set((state) => ({ messages: [...state.messages, response.data] }));
+            toast.success("Message sent successfully");
+        } catch (error) {
+            console.error("Error sending message", error);
+            toast.error("Error sending message");
+        } finally {
+            set({ isMessagesLoading: false });
         }
+    },
 
 }))
