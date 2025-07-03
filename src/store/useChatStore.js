@@ -13,6 +13,7 @@ export const useChatStore = create((set) => ({
     isMessagesLoading: false,
     isMemosLoading: false,
     isUserMemosLoading: false,
+    isSendingMessage: false,
 
     getUsers: async () => {
         set({ isUsersLoading: true });
@@ -88,13 +89,13 @@ export const useChatStore = create((set) => ({
      * @param {File} [params.image] - The image file to send (optional)
      */
 sendMessage: async ({ receiverId, text, image }) => {
-  set({ isMessagesLoading: true });
+  set({ isSendingMessage: true });
   try {
     const formData = new FormData();
     formData.append("text", text || "");
     if (image) formData.append("image", image);
 
-    await axiosInstance.post(
+    const response = await axiosInstance.post(
       `/messages/user/${receiverId}`,
       formData,
       {
@@ -105,14 +106,22 @@ sendMessage: async ({ receiverId, text, image }) => {
       }
     );
 
-    // After sending, re-fetch the conversation to update messages array
-    await useChatStore.getState().getMessages(receiverId);
+    // Get current user info for senderName and senderAvatar
+    const authUser = useAuthStore.getState().authUser;
+    const newMessage = {
+      ...response.data,
+      isOwn: true,
+      senderName: authUser?.name || 'You',
+      senderAvatar: authUser?.avatar || '/avatar.png',
+    };
+
+    set((state) => ({ messages: Array.isArray(state.messages) ? [...state.messages, newMessage] : [...(state.messages.messages || []), newMessage] }));
     toast.success("Message sent successfully");
   } catch (error) {
     console.error("Error sending message", error);
     toast.error("Error sending message");
   } finally {
-    set({ isMessagesLoading: false });
+    set({ isSendingMessage: false });
   }
 },
 
