@@ -76,6 +76,7 @@ const ChatContainer = () => {
                     } transition-all duration-200`}
                   >
                     {msg.text && <span className='block text-base leading-relaxed'>{msg.text}</span>}
+                    {/* Only render image if present, otherwise just text */}
                     {msg.image && (
                       <img
                         src={msg.imageUrl}
@@ -83,14 +84,12 @@ const ChatContainer = () => {
                         className='mt-3 max-w-xs max-h-56 rounded-xl border border-base-300 shadow-md object-cover'
                       />
                     )}
-                  </div>
-                  <div className={`flex flex-row gap-2 items-center mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                    <span className={`text-xs opacity-70 ${isOwn ? 'text-primary' : 'text-base-content'}`}>
+                    <span className={`absolute -bottom-6 text-xs opacity-70 ${isOwn ? 'text-primary' : 'text-base-content'}`}>
                       {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                     </span>
-                    <span className={`text-xs font-semibold tracking-wide ${isOwn ? 'text-primary' : 'text-gray-500 dark:text-gray-400'}`}>
-                      {isOwn ? 'You' : msg.senderName || 'User'}
-                    </span>
+                  </div>
+                  <div className={`text-xs mt-2 font-semibold tracking-wide ${isOwn ? 'text-primary' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {isOwn ? 'You' : msg.senderName || 'User'}
                   </div>
                 </div>
                 {isOwn && (
