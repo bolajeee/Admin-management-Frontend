@@ -36,7 +36,7 @@ export const useChatStore = create((set) => ({
             const response = await axiosInstance.get(`/messages/userMessage/${userId}`)
             set({ messages: response.data })
             toast.success("Messages fetched successfully")
-            
+
         } catch (error) {
             console.error("Error fetching messages", error)
             toast.error("Error fetching messages")
@@ -88,41 +88,41 @@ export const useChatStore = create((set) => ({
      * @param {string} [params.text] - The text content of the message
      * @param {File} [params.image] - The image file to send (optional)
      */
-sendMessage: async ({ receiverId, text, image }) => {
-  set({ isSendingMessage: true });
-  try {
-    const formData = new FormData();
-    formData.append("text", text || "");
-    if (image) formData.append("image", image);
+    sendMessage: async ({ receiverId, text, image }) => {
+        set({ isSendingMessage: true });
+        try {
+            const formData = new FormData();
+            formData.append("text", text || "");
+            if (image) formData.append("image", image);
 
-    const response = await axiosInstance.post(
-      `/messages/user/${receiverId}`,
-      formData,
-      {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
+            const response = await axiosInstance.post(
+                `/messages/user/${receiverId}`,
+                formData,
+                {
+                    withCredentials: true,
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
 
-    // Get current user info for senderName and senderAvatar
-    const authUser = useAuthStore.getState().authUser;
-    const newMessage = {
-      ...response.data,
-      isOwn: true,
-      senderName: authUser?.name || 'You',
-      senderAvatar: authUser?.avatar || '/avatar.png',
-    };
+            // Get current user info for senderName and senderAvatar
+            const authUser = useAuthStore.getState().authUser;
+            const newMessage = {
+                ...response.data,
+                isOwn: true,
+                senderName: authUser?.name || 'You',
+                senderAvatar: authUser?.avatar || '/avatar.png',
+            };
 
-    set((state) => ({ messages: Array.isArray(state.messages) ? [...state.messages, newMessage] : [...(state.messages.messages || []), newMessage] }));
-    toast.success("Message sent successfully");
-  } catch (error) {
-    console.error("Error sending message", error);
-    toast.error("Error sending message");
-  } finally {
-    set({ isSendingMessage: false });
-  }
-},
+            set((state) => ({ messages: Array.isArray(state.messages) ? [...state.messages, newMessage] : [...(state.messages.messages || []), newMessage] }));
+            toast.success("Message sent successfully");
+        } catch (error) {
+            console.error("Error sending message", error);
+            toast.error("Error sending message");
+        } finally {
+            set({ isSendingMessage: false });
+        }
+    },
 
 }))

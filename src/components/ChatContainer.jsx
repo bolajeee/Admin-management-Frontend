@@ -3,7 +3,7 @@ import MessageInput from './MessageInput'
 import ChatHeader from './ChatHeader'
 import { useChatStore } from '../store/useChatStore.js'
 import { useAuthStore } from '../store/useAuthStore.js'
-import { useThemeStore } from '../store/useThemeStore.js' 
+import { useThemeStore } from '../store/useThemeStore.js'
 const ChatContainer = () => {
   const { getMessages, isMessagesLoading, selectedUser, messages, sendMessage } = useChatStore()
   const authUser = useAuthStore((state) => state.authUser);
@@ -65,23 +65,22 @@ const ChatContainer = () => {
                 )}
                 <div className={`max-w-[75%] sm:max-w-[60%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
                   <div
-                    className={`rounded-3xl px-5 py-3 shadow-lg relative break-words whitespace-pre-wrap border ${
-                      isOwn
-                        ? theme === 'dark'
-                          ? 'bg-primary text-primary-content border-primary/60'
-                          : 'bg-primary text-primary-content border-primary/60'
-                        : theme === 'dark'
+                    className={`rounded-3xl px-5 py-3 shadow-lg relative break-words whitespace-pre-wrap border ${isOwn
+                      ? theme === 'dark'
+                        ? 'bg-primary text-primary-content border-primary/60'
+                        : 'bg-primary text-primary-content border-primary/60'
+                      : theme === 'dark'
                         ? 'bg-base-300 text-base-content border-base-400'
                         : 'bg-base-200 text-base-content border-base-300'
-                    } transition-all duration-200`}
+                      } transition-all duration-200`}
                   >
                     {msg.text && <span className='block text-base leading-relaxed'>{msg.text}</span>}
                     {/* Only render image if present, otherwise just text */}
-                    {msg.image && (
+                    {msg.imageUrl && typeof msg.imageUrl === 'string' && (
                       <img
                         src={msg.imageUrl}
-                        alt='attachment'
-                        className='mt-3 max-w-xs max-h-56 rounded-xl border border-base-300 shadow-md object-cover'
+                        alt="attachment"
+                        className="mt-3 max-w-xs max-h-56 rounded-xl border border-base-300 shadow-md object-cover"
                       />
                     )}
                     <span className={`absolute -bottom-6 text-xs opacity-70 ${isOwn ? 'text-primary' : 'text-base-content'}`}>
