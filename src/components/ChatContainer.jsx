@@ -41,6 +41,17 @@ const ChatContainer = () => {
     <p className='text-sm text-gray-500'>Loading messages...</p>
   </div>
 
+  // Helper to get a single image URL from possible fields
+  const getSingleImageUrl = (msg) => {
+    if (msg.image && typeof msg.image === 'string' && msg.image.trim() && msg.image !== 'null' && msg.image !== 'undefined') return msg.image;
+    if (msg.imageUrl && typeof msg.imageUrl === 'string' && msg.imageUrl.trim() && msg.imageUrl !== 'null' && msg.imageUrl !== 'undefined') return msg.imageUrl;
+    if (Array.isArray(msg.image) && msg.image[0] && typeof msg.image[0] === 'string' && msg.image[0].trim() && msg.image[0] !== 'null' && msg.image[0] !== 'undefined') return msg.image[0];
+    if (Array.isArray(msg.imageUrl) && msg.imageUrl[0] && typeof msg.imageUrl[0] === 'string' && msg.imageUrl[0].trim() && msg.imageUrl[0] !== 'null' && msg.imageUrl[0] !== 'undefined') return msg.imageUrl[0];
+    if (Array.isArray(msg.imageUrls) && msg.imageUrls[0] && typeof msg.imageUrls[0] === 'string' && msg.imageUrls[0].trim() && msg.imageUrls[0] !== 'null' && msg.imageUrls[0] !== 'undefined') return msg.imageUrls[0];
+    if (msg.imageUrls && typeof msg.imageUrls === 'string' && msg.imageUrls.trim() && msg.imageUrls !== 'null' && msg.imageUrls !== 'undefined') return msg.imageUrls;
+    return null;
+  };
+
   return (
     <div className={`flex-1 flex flex-col overflow-auto rounded-lg shadow-md ${theme === 'dark' ? 'bg-base-200' : 'bg-base-100'}`}>
       <ChatHeader />
@@ -48,6 +59,7 @@ const ChatContainer = () => {
         {messageArray.length > 0 ? (
           messageArray.map((msg, idx) => {
             const isOwn = msg.sender === authUser?._id || msg.senderId === authUser?._id;
+            const imageUrl = getSingleImageUrl(msg);
 
             return (
               <div
@@ -75,12 +87,13 @@ const ChatContainer = () => {
                       } transition-all duration-200`}
                   >
                     {msg.text && <span className='block text-base leading-relaxed'>{msg.text}</span>}
-                    {/* Only render image if present, otherwise just text */}
-                    {msg.imageUrl && typeof msg.imageUrl === 'string' && (
+                    {/* Only render a single image if present */}
+                    {imageUrl && (
                       <img
-                        src={msg.imageUrl}
+                        src={imageUrl}
                         alt="attachment"
                         className="mt-3 max-w-xs max-h-56 rounded-xl border border-base-300 shadow-md object-cover"
+                        onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }}
                       />
                     )}
                     <span className={`absolute -bottom-6 text-xs opacity-70 ${isOwn ? 'text-primary' : 'text-base-content'}`}>
