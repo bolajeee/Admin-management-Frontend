@@ -3,6 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Users, MessageSquare, Clock, AlertTriangle } from 'lucide-react';
 import { useThemeStore } from '../../store/useThemeStore';
 import { axiosInstance } from '../../lib/axios';
+import { useNavigate } from 'react-router-dom';
+import toast from "react-hot-toast";
+import MemoModal from "../../components/MemoModal";
 
 export default function DashboardPage() {
   const { theme } = useThemeStore();
@@ -10,11 +13,18 @@ export default function DashboardPage() {
     employees: null,
     memos: null,
     tasks: null,
-    messagesToday: null,
+    messagesToday: null
   });
   const [loading, setLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
+  const [actions, setActions] = useState([]);
+  const [actionsLoading, setActionsLoading] = useState(true);
+  const [showMemoModal, setShowMemoModal] = useState(false);
+  const [memoText, setMemoText] = useState("");
+  const [sendingMemo, setSendingMemo] = useState(false);
+  const [memoRoute, setMemoRoute] = useState('/memos/send-company');
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchStats() {
@@ -55,6 +65,21 @@ export default function DashboardPage() {
       }
     }
     fetchRecentActivity();
+  }, []);
+
+  useEffect(() => {
+    async function fetchSuggestedActions() {
+      setActionsLoading(true);
+      try {
+        const res = await axiosInstance.get('/admin/suggested-actions'); // [{ label, onClickAction }]
+        setActions(Array.isArray(res.data.actions) ? res.data.actions : []);
+      } catch (err) {
+        setActions([]);
+      } finally {
+        setActionsLoading(false);
+      }
+    }
+    fetchSuggestedActions();
   }, []);
 
   const statCards = [
@@ -127,19 +152,56 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-2">
-              <button className="w-full text-left p-3 rounded-lg hover:bg-primary/10 transition-colors text-base-content">
-                Send Company-wide Memo
-              </button>
-              <button className="w-full text-left p-3 rounded-lg hover:bg-primary/10 transition-colors text-base-content">
-                Create New Task
-              </button>
-              <button className="w-full text-left p-3 rounded-lg hover:bg-primary/10 transition-colors text-base-content">
-                View System Logs
-              </button>
+              {actionsLoading ? (
+                <div className="text-sm text-base-content/60 animate-pulse">Loading actions...</div>
+              ) : actions.length === 0 ? (
+                <div className="text-sm text-base-content/60">No actions available.</div>
+              ) : (
+                actions.map((action, idx) => (
+                  <button
+                    key={idx}
+                    className="w-full text-left p-3 rounded-lg hover:bg-primary/10 transition-colors text-base-content"
+                    onClick={() => {
+                      if (action.label && action.label.toLowerCase().includes('memo')) {
+                        setMemoRoute(action.route || '/memos/send-company');
+                        setShowMemoModal(true);
+                      } else if (action.route) {
+                        navigate(action.route);
+                      } else if (typeof action.onClick === 'function') {
+                        action.onClick();
+                      }
+                    }}
+                    type="button"
+                  >
+                    {action.label}
+                  </button>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <MemoModal
+        show={showMemoModal}
+        onClose={() => setShowMemoModal(false)}
+        memoText={memoText}
+        setMemoText={setMemoText}
+        sendingMemo={sendingMemo}
+        onSendMemo={async () => {
+          setSendingMemo(true);
+          try {
+            await axiosInstance.post(memoRoute, { title: memoText.substring(0, 20), content: memoText }, { withCredentials: true });
+            setShowMemoModal(false);
+            setMemoText("");
+            toast.success("Memo sent to all employees!");
+          } catch (err) {
+            toast.error("Failed to send memo. Please try again.");
+          } finally {
+            setSendingMemo(false);
+          }
+        }}
+      />
     </div>
   );
 }
