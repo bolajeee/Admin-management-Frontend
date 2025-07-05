@@ -5,6 +5,9 @@ import { LogOut, MessageSquare, Settings, User, LayoutDashboard } from "lucide-r
 const Navbar = () => {
   const { logout, authUser } = useAuthStore();
 
+  // Debug: Log authUser to check if role is being passed
+  console.log('Navbar authUser:', authUser);
+
   return (
     <header
       className=" border-b border-base-300 fixed w-full top-0 z-40 backdrop-blur-lg bg-base-100/80"
@@ -18,6 +21,8 @@ const Navbar = () => {
               </div>
               <h1 className="text-lg font-bold">Chatty</h1>
             </Link>
+            {/* Debug: Show authUser role */}
+            {/* {authUser && <span className="text-xs text-warning">Role: {authUser.role}</span>} */}
             {authUser?.role === 'admin' && (
               <Link 
                 to="/admin" 

@@ -18,7 +18,9 @@ export const useAuthStore = create(
       checkAuth: async () => {
         try {
           const res = await axiosInstance.get("/auth/check");
-          set({ authUser: res.data });
+          // Trim role if present
+          const user = res.data && typeof res.data === 'object' && res.data.role ? { ...res.data, role: res.data.role.trim() } : res.data;
+          set({ authUser: user });
         } catch (error) {
           console.error("Error in checkAuth:", error);
           set({ authUser: null });
@@ -31,7 +33,9 @@ export const useAuthStore = create(
         set({ isSigningUp: true });
         try {
           const res = await axiosInstance.post("/auth/signup", formData);
-          set({ authUser: res.data });
+          // Trim role if present
+          const user = res.data && typeof res.data === 'object' && res.data.role ? { ...res.data, role: res.data.role.trim() } : res.data;
+          set({ authUser: user });
           toast.success("Signup successful");
         } catch (error) {
           console.error("Error in signUp:", error.response?.data?.message);
@@ -56,7 +60,9 @@ export const useAuthStore = create(
         set({ isLoggingIn: true });
         try {
           const res = await axiosInstance.post("/auth/login", formData, { withCredentials: true });
-          set({ authUser: res.data });
+          // Trim role if present
+          const user = res.data && typeof res.data === 'object' && res.data.role ? { ...res.data, role: res.data.role.trim() } : res.data;
+          set({ authUser: user });
           toast.success("Login successful");
         } catch (error) {
           console.error("Error in login:", error.response?.data?.message);
@@ -70,7 +76,9 @@ export const useAuthStore = create(
         set({ isUpdatingProfile: true });
         try {
           const res = await axiosInstance.put("/auth/updateProfile", formData);
-          set({ authUser: res.data });
+          // Trim role if present
+          const user = res.data && typeof res.data === 'object' && res.data.role ? { ...res.data, role: res.data.role.trim() } : res.data;
+          set({ authUser: user });
           toast.success("Profile updated successfully");
         } catch (error) {
           console.error("Error in updateProfile:", error?.response?.data?.message || error.message);
