@@ -20,7 +20,7 @@ export default function DashboardPage() {
       try {
         // Replace these endpoints with your actual backend endpoints
         const [employeesRes, memosRes, tasksRes, messagesRes] = await Promise.all([
-          axiosInstance.get('/employees/count'), // returns { count: number }
+          axiosInstance.get('messages/employees/count'), // returns { count: number }
           axiosInstance.get('/memos/count'),     // returns { count: number }
           axiosInstance.get('/tasks/count'),     // returns { count: number }
           axiosInstance.get('/messages/today'),  // returns { count: number }

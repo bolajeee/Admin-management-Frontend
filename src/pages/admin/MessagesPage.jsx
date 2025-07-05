@@ -9,17 +9,13 @@ export default function MessagesPage() {
   const { theme } = useThemeStore();
   const {
     users,
-    memos,
     isUsersLoading,
-    isMemosLoading,
     getUsers,
-    getMemos,
     // Optionally: error states
   } = useChatStore();
 
   useEffect(() => {
     getUsers();
-    getMemos();
     // eslint-disable-next-line
   }, []);
 
