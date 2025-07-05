@@ -1,16 +1,50 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Users, MessageSquare, Clock, AlertTriangle } from 'lucide-react';
 import { useThemeStore } from '../../store/useThemeStore';
+import { axiosInstance } from '../../lib/axios';
 
 export default function DashboardPage() {
   const { theme } = useThemeStore();
+  const [stats, setStats] = useState({
+    employees: null,
+    memos: null,
+    tasks: null,
+    messagesToday: null,
+  });
+  const [loading, setLoading] = useState(true);
 
-  const stats = [
-    { title: 'Total Employees', value: '1,234', icon: <Users className="h-6 w-6" /> },
-    { title: 'Active Memos', value: '42', icon: <AlertTriangle className="h-6 w-6" /> },
-    { title: 'Pending Tasks', value: '18', icon: <Clock className="h-6 w-6" /> },
-    { title: 'Messages Today', value: '156', icon: <MessageSquare className="h-6 w-6" /> },
+  useEffect(() => {
+    async function fetchStats() {
+      setLoading(true);
+      try {
+        // Replace these endpoints with your actual backend endpoints
+        const [employeesRes, memosRes, tasksRes, messagesRes] = await Promise.all([
+          axiosInstance.get('/employees/count'), // returns { count: number }
+          axiosInstance.get('/memos/count'),     // returns { count: number }
+          axiosInstance.get('/tasks/count'),     // returns { count: number }
+          axiosInstance.get('/messages/today'),  // returns { count: number }
+        ]);
+        setStats({
+          employees: employeesRes.data.count,
+          memos: memosRes.data.count,
+          tasks: tasksRes.data.count,
+          messagesToday: messagesRes.data.count,
+        });
+      } catch (err) {
+        setStats({ employees: '-', memos: '-', tasks: '-', messagesToday: '-' });
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  const statCards = [
+    { title: 'Total Employees', value: stats.employees, icon: <Users className="h-6 w-6" /> },
+    { title: 'Active Memos', value: stats.memos, icon: <AlertTriangle className="h-6 w-6" /> },
+    { title: 'Pending Tasks', value: stats.tasks, icon: <Clock className="h-6 w-6" /> },
+    { title: 'Messages Today', value: stats.messagesToday, icon: <MessageSquare className="h-6 w-6" /> },
   ];
 
   return (
@@ -19,7 +53,7 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        {stats.map((stat, index) => (
+        {statCards.map((stat, index) => (
           <Card key={index} className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-base-content">
@@ -30,7 +64,9 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-base-content">{stat.value}</div>
+              <div className="text-2xl font-bold text-base-content">
+                {loading ? <span className="animate-pulse">...</span> : stat.value}
+              </div>
             </CardContent>
           </Card>
         ))}
