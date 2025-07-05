@@ -13,6 +13,8 @@ export default function DashboardPage() {
     messagesToday: null,
   });
   const [loading, setLoading] = useState(true);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
 
   useEffect(() => {
     async function fetchStats() {
@@ -38,6 +40,21 @@ export default function DashboardPage() {
       }
     }
     fetchStats();
+  }, []);
+
+  useEffect(() => {
+    async function fetchRecentActivity() {
+      setActivityLoading(true);
+      try {
+        const res = await axiosInstance.get('/messages/recent'); // [{ senderName, text, createdAt }]
+        setRecentActivity(Array.isArray(res.data.messages) ? res.data.messages : []);
+      } catch (err) {
+        setRecentActivity([]);
+      } finally {
+        setActivityLoading(false);
+      }
+    }
+    fetchRecentActivity();
   }, []);
 
   const statCards = [
@@ -80,17 +97,26 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[1, 2, 3].map((item) => (
-                <div key={item} className="flex items-start gap-4 p-2 hover:bg-muted/50 rounded-lg">
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    <MessageSquare className="h-4 w-4 text-primary" />
+              {activityLoading ? (
+                <div className="text-sm text-base-content/60 animate-pulse">Loading recent activity...</div>
+              ) : recentActivity.length === 0 ? (
+                <div className="text-sm text-base-content/60">No recent activity.</div>
+              ) : (
+                recentActivity.map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-3 p-2 hover:bg-muted/50 rounded-lg">
+                    <div className="bg-primary/10 p-2 rounded-full flex items-center justify-center">
+                      <MessageSquare className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-semibold text-primary text-sm">{item.sender?.name || 'Unknown'}</span>
+                        <span className="text-xs text-base-content/60">{item.createdAt ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                      </div>
+                      <span className="text-sm text-base-content leading-snug">{item.text || <span className='italic text-base-content/50'>No message text</span>}</span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-base-content">New message from John Doe</p>
-                    <p className="text-xs text-base-content/80">2 minutes ago</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
