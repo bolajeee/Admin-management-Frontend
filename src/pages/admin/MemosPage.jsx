@@ -1,32 +1,30 @@
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { ClipboardList, Mail, FileText, User } from 'lucide-react';
+import { FileText, User } from 'lucide-react';
 import { useThemeStore } from '../../store/useThemeStore';
 import { Link } from 'react-router-dom';
 import { useChatStore } from '../../store/useChatStore';
+import { useMemoStore } from '../../store/useMemoStore';
 
 export default function MessagesPage() {
   const { theme } = useThemeStore();
-  const {
-    users,
-    memos,
-    isUsersLoading,
-    isMemosLoading,
-    getUsers,
-    getMemos,
-    // Optionally: error states
-  } = useChatStore();
+
+  const users = useChatStore((state) => state.users);
+  const isUsersLoading = useChatStore((state) => state.isUsersLoading);
+
+  const memos = useMemoStore((state) => state.memos);
+  const isMemosLoading = useMemoStore((state) => state.isMemosLoading);
+  const getMemos = useMemoStore.getState().getMemos;
 
   useEffect(() => {
-    getUsers();
+    useChatStore.getState().getUsers();
     getMemos();
-    // eslint-disable-next-line
   }, []);
 
   return (
     <div data-theme={theme}>
       <h1 className="text-2xl font-bold mb-8 pt-[70px] text-primary">Memos</h1>
-      {/* Company-wide Memos */}
+
       <Card className="mb-10">
         <CardHeader>
           <CardTitle>Company-wide Memos</CardTitle>
@@ -50,7 +48,6 @@ export default function MessagesPage() {
         </CardContent>
       </Card>
 
-      {/* Users List */}
       <Card>
         <CardHeader>
           <CardTitle>All Users</CardTitle>
