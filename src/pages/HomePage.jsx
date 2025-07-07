@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react"; // Requires lucide-react or you can replace with any icon
 
@@ -20,6 +20,7 @@ const HomePage = () => {
 
   const toggleTasks = () => setShowTasks((prev) => !prev);
   const toggleMemos = () => setShowMemos((prev) => !prev);
+
 
   return (
     <div className="h-screen bg-base-200">

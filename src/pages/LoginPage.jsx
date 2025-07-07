@@ -1,10 +1,9 @@
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useNavigate, useLocation, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import AuthImagePattern from "../components/AuthImagePattern";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare } from "lucide-react";
-import { useEffect } from "react";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,23 +11,54 @@ const LoginPage = () => {
     email: "",
     password: "",
   });
-  const { authUser, login, isLoggingIn } = useAuthStore();
+  const [error, setError] = useState(null);
+  const [isInitialCheck, setIsInitialCheck] = useState(true);
+  // console.log(window.location.pathname)
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
+
+  const { login, isLoggingIn, authUser, isCheckingAuth } = useAuthStore()
+
+  // Handle redirect after successful login or if already authenticated
+  useEffect(() => {
+    // Skip the initial render
+    if (isInitialCheck) {
+      setIsInitialCheck(false);
+      return;
+    }
+
+    // Only redirect if we have a valid user and we're not in the middle of checking auth
+    if (authUser?.role && !isCheckingAuth) {
+      authUser.role === 'admin' ? navigate('/admin/dashboard') : navigate(from);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    login(formData);
+    setError(null);
+
+    try {
+      const success = await login(formData);
+      // No need to navigate here - the useEffect will handle the redirect
+      if (!success) {
+        setError("Login failed. Please check your credentials.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(error.response?.data?.message || "An error occurred during login. Please try again.");
+    }
   };
 
-   useEffect(() => {
-    if (authUser) {
-      if (authUser.role === "admin") {
-        navigate("/admin", { replace: true });
-      } else {
-        navigate("/", { replace: true });
-      }
-    }
-  }, [authUser, navigate]);
+  // Show loading state while checking initial auth
+  if (isCheckingAuth && isInitialCheck) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
 
   return (
     <div className="h-screen grid lg:grid-cols-2">
@@ -98,11 +128,16 @@ const LoginPage = () => {
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary w-full" disabled={isLoggingIn}>
+            {error && (
+              <div className="text-center text-red-500 text-sm font-medium">
+                {error}
+              </div>
+            )}
+            <button type="submit" className="btn btn-primary w-full" disabled={isLoggingIn}
+            >
               {isLoggingIn ? (
                 <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Loading...
+                  <Loader2 className="h-5 w-5 animate-spin" /> Loading...
                 </>
               ) : (
                 "Sign in"

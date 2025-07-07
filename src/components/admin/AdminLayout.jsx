@@ -45,7 +45,7 @@ export default function AdminLayout() {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-base-200 border-r border-base-300 shadow-lg transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-16 border-t inset-y-0 left-0 z-50 w-64 transform bg-base-200 border-r border-base-300 shadow-lg transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center justify-between border-b border-base-300 px-4 md:justify-center bg-base-100">
@@ -88,6 +88,17 @@ export default function AdminLayout() {
           </div>
         </div>
       </div>
+
+      {/* Show toggle icon when sidebar is closed */}
+{!mobileMenuOpen && (
+  <button
+    onClick={toggleMobileMenu}
+    className="fixed bottom-6 left-6 z-50 p-3 rounded-full shadow-lg bg-primary text-white md:hidden transition-opacity duration-300"
+>
+    <Menu className="w-5 h-5" />
+  </button>
+)}
+
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">

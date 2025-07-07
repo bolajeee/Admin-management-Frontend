@@ -16,18 +16,38 @@ export const useAuthStore = create(
 
 
       checkAuth: async () => {
+        // Don't check auth if we're already on the login page
+        if (window.location.pathname === '/login') {
+          set({ isCheckingAuth: false });
+          return;
+        }
+        
         try {
           const res = await axiosInstance.get("/auth/check");
-          // Trim role if present
-          const user = res.data && typeof res.data === 'object' && res.data.role ? { ...res.data, role: res.data.role.trim() } : res.data;
-          set({ authUser: user });
+          const user = res.data && typeof res.data === 'object' && res.data.role
+            ? { ...res.data, role: res.data.role.trim() }
+            : res.data;
+
+          set({ 
+            authUser: user,
+            isCheckingAuth: false 
+          });
         } catch (error) {
           console.error("Error in checkAuth:", error);
-          set({ authUser: null });
-        } finally {
-          set({ isCheckingAuth: false });
+          set({ 
+            authUser: null,
+            isCheckingAuth: false 
+          });
+          
+          // Only redirect to login if not already on login page
+          if (window.location.pathname !== '/login') {
+            window.location.href = "/login";
+          }
         }
       },
+
+
+      
 
       signUp: async (formData) => {
         set({ isSigningUp: true });
@@ -59,14 +79,24 @@ export const useAuthStore = create(
       login: async (formData) => {
         set({ isLoggingIn: true });
         try {
-          const res = await axiosInstance.post("/auth/login", formData, { withCredentials: true });
-          // Trim role if present
-          const user = res.data && typeof res.data === 'object' && res.data.role ? { ...res.data, role: res.data.role.trim() } : res.data;
+          const res = await axiosInstance.post("/auth/login", formData, {
+            withCredentials: true,
+          });
+
+          const user =
+            res.data && typeof res.data === "object" && res.data.role
+              ? { ...res.data, role: res.data.role.trim() }
+              : res.data;
+
           set({ authUser: user });
           toast.success("Login successful");
+          return true;
         } catch (error) {
-          console.error("Error in login:", error.response?.data?.message);
-          toast.error("Error in login", error.response?.data?.message);
+          const message =
+            error.response?.data?.message || "Invalid credentials or server error.";
+          console.error("Error in login:", message);
+          toast.error(message);
+          return false;
         } finally {
           set({ isLoggingIn: false });
         }
@@ -105,6 +135,9 @@ export const useAuthStore = create(
     }),
     {
       name: "auth-storage", // this will persist to localStorage
+      partialize: (state) => ({
+        authUser: state.authUser,
+      }),
     }
   )
 );
