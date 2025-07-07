@@ -24,7 +24,12 @@ export default function DashboardPage() {
   const [memoText, setMemoText] = useState("");
   const [sendingMemo, setSendingMemo] = useState(false);
   const [memoRoute, setMemoRoute] = useState('/memos/send-company');
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUser, setNewUser] = useState({ name: '', email: '', role: 'employee' });
+  const [addingUser, setAddingUser] = useState(false);
+
   const navigate = useNavigate();
+
 
   useEffect(() => {
     async function fetchStats() {
@@ -81,6 +86,22 @@ export default function DashboardPage() {
     }
     fetchSuggestedActions();
   }, []);
+
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    setAddingUser(true);
+    try {
+      const res = await axiosInstance.post('/auth/create', newUser); // adjust backend route as needed
+      toast.success("User added successfully");
+      setShowAddUserModal(false);
+      setNewUser({ name: '', email: '', role: 'employee' });
+    } catch {
+      toast.error("Failed to add user.");
+    } finally {
+      setAddingUser(false);
+    }
+  };
+
 
   const statCards = [
     { title: 'Total Employees', value: stats.employees, icon: <Users className="h-6 w-6" /> },
@@ -145,7 +166,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-
+        {/**suggested action */}
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
@@ -165,6 +186,8 @@ export default function DashboardPage() {
                       if (action.label && action.label.toLowerCase().includes('memo')) {
                         setMemoRoute(action.route || '/memos/send-company');
                         setShowMemoModal(true);
+                      } else if (action.label && action.label.toLowerCase().includes('add employee')) {
+                        setShowAddUserModal(true);
                       } else if (action.route) {
                         navigate(action.route);
                       } else if (typeof action.onClick === 'function') {
@@ -202,6 +225,64 @@ export default function DashboardPage() {
           }
         }}
       />
+
+      {showAddUserModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+          <div className="bg-base-100 p-6 rounded-xl shadow-lg w-[90%] max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Add New Employee</h2>
+            <form onSubmit={handleAddUser} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium">Name</label>
+                <input
+                  type="text"
+                  required
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  className="w-full mt-1 px-3 py-2 border rounded-md bg-base-200 text-base-content"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  className="w-full mt-1 px-3 py-2 border rounded-md bg-base-200 text-base-content"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Role</label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                  className="w-full mt-1 px-3 py-2 border rounded-md bg-base-200 text-base-content"
+                >
+                  <option value="employee">Employee</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddUserModal(false)}
+                  className="px-4 py-2 rounded-md bg-base-300 text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addingUser}
+                  className="px-4 py-2 rounded-md bg-primary text-white text-sm"
+                >
+                  {addingUser ? 'Adding...' : 'Add User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
