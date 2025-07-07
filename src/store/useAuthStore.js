@@ -45,9 +45,7 @@ export const useAuthStore = create(
           }
         }
       },
-
-
-      
+ 
 
       signUp: async (formData) => {
         set({ isSigningUp: true });

@@ -14,7 +14,6 @@ const Navbar = () => {
 
   const isAdmin = authUser?.role === "admin";
   const isAdminRoute = location.pathname.startsWith("/admin");
-  const isAdminSubRoute = isAdminRoute && location.pathname !== "/admin";
 
   return (
     <header className="fixed w-full top-0 z-40 border-b border-base-300 backdrop-blur-lg bg-base-100/80">
@@ -43,13 +42,13 @@ const Navbar = () => {
               </Link>
             )}
 
-            {isAdmin && isAdminSubRoute && (
+            {isAdmin && (
               <Link
-                to="/admin"
+                to="/"
                 className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 <LayoutDashboard className="h-4 w-4" />
-                Back to Dashboard
+                Back to HOME
               </Link>
             )}
           </div>

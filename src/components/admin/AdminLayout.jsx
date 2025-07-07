@@ -7,7 +7,6 @@ import {
   Bell,
   Settings,
   LogOut,
-  FileText,
   CheckSquare,
   BarChart2,
   Menu,
@@ -34,7 +33,7 @@ export default function AdminLayout() {
   const { theme } = useThemeStore();
 
   return (
-    <div className={`flex h-screen bg-base-100`} data-theme={theme}>
+    <div className="h-screen flex overflow-hidden bg-base-100" data-theme={theme}>
       {/* Mobile menu overlay */}
       {mobileMenuOpen && (
         <div
@@ -58,15 +57,15 @@ export default function AdminLayout() {
             </button>
           </div>
 
-          <div className="flex flex-1 flex-col overflow-y-auto p-4">
-            <nav className="flex-1 space-y-1">
+          <div className="flex-1 flex flex-col p-4 overflow-y-auto">
+            <nav className="space-y-1">
               {adminNavItems.map((item) => (
                 <Link
                   key={item.name}
                   to={item.path}
                   className={`flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${location.pathname === item.path
-                      ? 'bg-primary/10 text-primary shadow-sm scale-[1.03]'
-                      : 'text-base-content hover:bg-primary/5 hover:text-primary'
+                    ? 'bg-primary/10 text-primary shadow-sm scale-[1.03]'
+                    : 'text-base-content hover:bg-primary/5 hover:text-primary'
                     }`}
                   onClick={closeMobileMenu}
                 >
@@ -76,10 +75,10 @@ export default function AdminLayout() {
               ))}
             </nav>
 
-            <div className="border-t border-base-300 pt-4 mt-4">
+            <div className="border-t border-base-300 pt-4 mt-auto">
               <button
                 onClick={logout}
-                className="flex w-fit items-center rounded-lg px-4 py-3 text-sm font-medium text-error transition-colors hover:bg-error/10 hover:scale-[1.03]"
+                className="flex items-center rounded-lg px-4 py-3 text-sm font-medium text-error transition-colors hover:bg-error/10 hover:scale-[1.03]"
               >
                 <LogOut className="mr-3 h-5 w-5" />
                 Logout
@@ -89,34 +88,32 @@ export default function AdminLayout() {
         </div>
       </div>
 
-      {/* Show toggle icon when sidebar is closed */}
-{!mobileMenuOpen && (
+      {/* Mobile Toggle Icon */}
+      {!mobileMenuOpen && (
   <button
     onClick={toggleMobileMenu}
-    className="fixed bottom-6 left-6 z-50 p-3 rounded-full shadow-lg bg-primary text-white md:hidden transition-opacity duration-300"
->
+    className="fixed top-20 left-4 z-50 p-2 rounded-md shadow-md bg-primary text-white md:hidden"
+  >
     <Menu className="w-5 h-5" />
   </button>
 )}
 
 
-      {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Mobile header */}
-        <header className="flex h-16 items-center justify-between border-b border-base-300 bg-base-100/80 px-4 shadow-sm md:hidden backdrop-blur">
+      {/* Main Content Area */}
+      <div className="flex flex-1 flex-col h-screen">
+        <header className="h-16 flex items-center justify-between px-4 border-b border-base-300 bg-base-100/80 backdrop-blur z-30 shadow-sm">
           <h1 className="text-lg font-semibold text-primary">
             {adminNavItems.find(item => location.pathname === item.path)?.name || 'Admin'}
           </h1>
           <button
             onClick={toggleMobileMenu}
-            className="rounded-md p-2 text-base-content/60 hover:bg-base-300"
+            className="rounded-md p-2 text-base-content/60 hover:bg-base-300 md:hidden"
           >
             <Menu className="h-6 w-6" />
           </button>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-base-100 min-h-screen">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-base-100">
           <div className="mx-auto max-w-7xl">
             <Outlet />
           </div>
