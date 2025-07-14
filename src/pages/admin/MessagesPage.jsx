@@ -55,59 +55,52 @@ export default function MessagesPage() {
       ? 'bg-base-300 hover:bg-base-400 border-base-400 text-base-content'
       : 'bg-base-100 hover:bg-base-200 border-base-300 text-base-content';
     return (
-      <div className={`${textColor} min-h-screen`}>
-        <div className="flex pt-16 min-h-[calc(100vh-4rem)] h-[calc(100vh-4rem)] gap-6 justify-center">
-          {/* Sidebar */}
-          <div className={`flex flex-col min-h-0 border-r w-[280px] h-full border-t ${borderColor} ${sidebarBg} rounded-xl m-4 ${sidebarShadow} transition-all duration-300`}>
-            <div className="flex-1 overflow-y-auto min-h-0 p-4">
-              <Sidebar />
-            </div>
-          </div>
+      <div className={`${textColor} h-[calc(100vh-4rem)] pt-16 w-full flex justify-center items-center`}>
+        
           {/* Main Chat */}
-          <div className={`flex flex-1 min-h-0 flex-col h-full border-t ${borderColor} ${chatBg} rounded-xl m-4 ${chatShadow} transition-all duration-300`}>
+          <div className={`flex flex-col w-full max-w-6xl h-full border-t ${borderColor} ${chatBg} rounded-xl ${chatShadow} transition-all duration-300`}>
             {/* Cancel Button */}
-            <div className="p-4 border-b border-base-300 bg-transparent flex items-center justify-between rounded-t-xl">
+            <div className="px-3 py-2 border-b border-base-300 bg-transparent flex items-center justify-between rounded-t-xl">
               <button
-                className={`btn btn-sm border font-medium rounded-full px-6 py-2 shadow-md transition-all duration-200 ${cancelBtn}`}
+                className={`btn btn-sm border font-medium rounded-full px-4 py-1 shadow-md transition-all duration-200 ${cancelBtn}`}
                 onClick={() => navigate('/admin/messages')}
               >
                 Cancel
               </button>
               <span className="font-semibold text-lg text-primary">Chat</span>
             </div>
-            <div className="flex-1 min-h-0 h-0 overflow-y-auto p-4">
+            <div className="flex-1 min-h-0 h-0 overflow-y-auto px-2 pb-2 pt-1">
               <ChatContainer showHeader={false} />
             </div>
           </div>
-        </div>
       </div>
     );
   }
 
   // Otherwise, show the user list as before
   return (
-    <div data-theme={theme}>
-      <h1 className="text-2xl font-bold mb-8 pt-[70px] text-primary">Messages</h1>
+    <div data-theme={theme} className="px-2 pt-4">
+      <h1 className="text-2xl font-bold mb-4 text-primary">Messages</h1>
       {/* Users List */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle>All Users</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-2">
           {isUsersLoading ? (
             <div className="text-base-content/70">Loading users...</div>
           ) : users.length === 0 ? (
             <div className="text-base-content/70">No users found.</div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {users.map((user) => (
-                <div key={user._id} className="flex flex-col gap-2 p-5 rounded-xl bg-base-100 border border-base-300 shadow hover:shadow-lg transition-shadow">
-                  <div className="flex items-center gap-3 mb-2">
-                    <User className="h-6 w-6 text-primary" />
-                    <span className="font-semibold text-base-content text-lg">{user.name || user.email}</span>
+                <div key={user._id} className="flex flex-col gap-1 p-3 rounded-lg bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-1">
+                    <User className="h-5 w-5 text-primary" />
+                    <span className="font-semibold text-base-content text-base">{user.name || user.email}</span>
                   </div>
-                  <div className="flex gap-2">
-                    <Link to={`/admin/messages/${user._id}`} className="btn btn-sm btn-primary flex items-center gap-1 rounded-full px-4 py-2 text-base-content font-medium shadow hover:shadow-md">
+                  <div className="flex gap-1">
+                    <Link to={`/admin/messages/${user._id}`} className="btn btn-xs btn-primary flex items-center gap-1 rounded-full px-3 py-1 text-base-content font-medium shadow hover:shadow-md">
                       <Mail className="h-4 w-4" /> Message
                     </Link>  
                   </div>
