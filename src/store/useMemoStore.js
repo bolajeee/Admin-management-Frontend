@@ -18,6 +18,8 @@ export const useMemoStore = create((set) => ({
       } else if (Array.isArray(response.data.data)) {
         memos = response.data.data;
       }
+      // Filter out deleted memos
+      memos = memos.filter(memo => memo.status !== 'deleted');
       set({ memos });
       toast.success("Company memos fetched successfully");
     } catch (error) {
@@ -43,6 +45,8 @@ export const useMemoStore = create((set) => ({
       } else if (Array.isArray(response.data.data)) {
         userMemos = response.data.data;
       }
+      // Filter out deleted memos
+      userMemos = userMemos.filter(memo => memo.status !== 'deleted');
       set({ userMemos });
       toast.success("User memos fetched successfully");
     } catch (error) {

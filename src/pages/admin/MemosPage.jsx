@@ -9,12 +9,110 @@ import { useMemoStore } from '../../store/useMemoStore';
 import MemoModal from '../../components/modals/MemoModal';
 import { axiosInstance } from '../../lib/axios';
 import { useAuthStore } from '../../store/useAuthStore';
+import toast from 'react-hot-toast';
+import { CheckCircle, Clock, Trash2, Info, XCircle } from 'lucide-react';
 // Simple date formatting helper
 function formatDate(date) {
   if (!date) return '';
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleString();
 }
+
+// Add a simple modal for snoozing memos
+function SnoozeModal({ show, onClose, onSnooze, snoozing, defaultDuration = 15 }) {
+  const [duration, setDuration] = useState(defaultDuration);
+  const [comments, setComments] = useState('');
+  useEffect(() => {
+    if (show) {
+      setDuration(defaultDuration);
+      setComments('');
+    }
+  }, [show, defaultDuration]);
+  if (!show) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+      <div className="bg-base-100 p-6 rounded-xl shadow-xl w-full max-w-xs flex flex-col gap-4">
+        <h2 className="text-lg font-bold">Snooze Memo</h2>
+        <label className="flex flex-col gap-1">
+          <span className="text-sm">Duration (minutes)</span>
+          <input type="number" min={1} max={240} value={duration} onChange={e => setDuration(Number(e.target.value))} className="input input-bordered" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-sm">Comments (optional)</span>
+          <textarea value={comments} onChange={e => setComments(e.target.value)} className="textarea textarea-bordered" />
+        </label>
+        <div className="flex gap-2 justify-end">
+          <button className="btn btn-sm" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary btn-sm" disabled={snoozing} onClick={() => onSnooze(duration, comments)}>
+            {snoozing ? 'Snoozing...' : 'Snooze'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const getMemoStatusProps = (memo, snoozeAck) => {
+  // If snoozed and snooze not expired, show as snoozed
+  if (snoozeAck && snoozeAck.snoozedUntil && new Date(snoozeAck.snoozedUntil) > new Date()) {
+    return {
+      border: 'border-yellow-400',
+      bg: 'bg-yellow-50 opacity-70',
+      icon: <Clock className="text-yellow-500 w-4 h-4" />,
+      label: 'Snoozed',
+      text: 'text-yellow-700',
+      faded: true,
+      snoozedUntil: snoozeAck.snoozedUntil,
+    };
+  }
+  switch (memo.status) {
+    case 'active':
+      return {
+        border: 'border-green-400',
+        bg: 'bg-green-50',
+        icon: <CheckCircle className="text-green-500 w-4 h-4" />,
+        label: 'Active',
+        text: 'text-green-700',
+        faded: false,
+      };
+    case 'deleted':
+      return {
+        border: 'border-red-400',
+        bg: 'bg-red-50 opacity-60',
+        icon: <Trash2 className="text-red-500 w-4 h-4" />,
+        label: 'Deleted',
+        text: 'text-red-700',
+        faded: true,
+      };
+    case 'expired':
+      return {
+        border: 'border-gray-400',
+        bg: 'bg-gray-50 opacity-70',
+        icon: <Info className="text-gray-500 w-4 h-4" />,
+        label: 'Expired',
+        text: 'text-gray-700',
+        faded: true,
+      };
+    case 'cancelled':
+      return {
+        border: 'border-yellow-400',
+        bg: 'bg-yellow-50 opacity-70',
+        icon: <XCircle className="text-yellow-500 w-4 h-4" />,
+        label: 'Cancelled',
+        text: 'text-yellow-700',
+        faded: true,
+      };
+    default:
+      return {
+        border: 'border-base-300',
+        bg: 'bg-base-200',
+        icon: null,
+        label: memo.status,
+        text: 'text-base-content',
+        faded: false,
+      };
+  }
+};
 
 
 export default function MemosPage() {
@@ -39,6 +137,60 @@ export default function MemosPage() {
   const [memoText, setMemoText] = useState('');
   const [sendingMemo, setSendingMemo] = useState(false);
   const usersCount = users.length;
+  const [acknowledgedMemos, setAcknowledgedMemos] = useState([]);
+  const handleAcknowledge = async (memoId) => {
+    try {
+      await axiosInstance.patch(`/memos/${memoId}/acknowledge`);
+      setAcknowledgedMemos((prev) => [...prev, memoId]);
+      getMemos();
+      toast.success('Memo marked as read!');
+    } catch (e) {
+      toast.error('Failed to mark as read.');
+    }
+  };
+  const handleDelete = async (memoId) => {
+    if (!window.confirm('Are you sure you want to delete this memo?')) return;
+    try {
+      await axiosInstance.delete(`/memos/${memoId}`);
+      getMemos();
+      toast.success('Memo deleted!');
+    } catch (e) {
+      toast.error('Failed to delete memo.');
+    }
+  };
+
+  const [showSnoozeModal, setShowSnoozeModal] = useState(false);
+  const [snoozingMemoId, setSnoozingMemoId] = useState(null);
+  const [snoozing, setSnoozing] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState({}); // { [memoId]: bool }
+
+  const handleSnooze = async (memoId, duration, comments) => {
+    setSnoozing(true);
+    try {
+      await axiosInstance.patch(`/memos/${memoId}/snooze`, { durationMinutes: duration, comments });
+      setShowSnoozeModal(false);
+      setSnoozingMemoId(null);
+      getMemos();
+      toast.success('Memo snoozed!');
+    } catch (e) {
+      toast.error('Failed to snooze memo.');
+    } finally {
+      setSnoozing(false);
+    }
+  };
+
+  const handleStatusChange = async (memoId, newStatus) => {
+    setStatusUpdating(s => ({ ...s, [memoId]: true }));
+    try {
+      await axiosInstance.put(`/memos/${memoId}`, { status: newStatus });
+      getMemos();
+      toast.success('Memo status updated!');
+    } catch (e) {
+      toast.error('Failed to update status.');
+    } finally {
+      setStatusUpdating(s => ({ ...s, [memoId]: false }));
+    }
+  };
 
   useEffect(() => {
     useChatStore.getState().getUsers();
@@ -74,7 +226,7 @@ export default function MemosPage() {
   if (id && selectedUser) {
     return (
       <div data-theme={theme} className="h-[calc(100vh-4rem)] w-full flex justify-center items-center">
-        <div className="flex flex-col w-full max-w-2xl h-full border-t border-base-300 bg-base-100 rounded-xl shadow-xl transition-all duration-300">
+        <div className="flex flex-col w-6xl max-w-6xl h-full border-t border-base-300 bg-base-100 rounded-xl shadow-xl transition-all duration-300">
           {/* Header with Cancel Button and Send Memo */}
           <div className="px-4 py-2 border-b border-base-300 bg-base-100/80 rounded-t-xl shadow-sm flex items-center justify-between gap-2">
             <div className="flex gap-2">
@@ -124,13 +276,27 @@ export default function MemosPage() {
               <p className="text-base-content/70">No memos for this user.</p>
             ) : (
               <ul className="space-y-3">
-                {userMemos.map((memo) => (
-                  <li key={memo._id} className="p-4 rounded-lg bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="font-semibold text-base-content text-lg mb-1">{memo.title}</div>
-                    <div className="text-sm text-base-content/80 mb-2">{memo.content}</div>
-                    <div className="text-xs text-base-content/60">{formatDate(memo.date)}</div>
-                  </li>
-                ))}
+                {userMemos.map((memo) => {
+                  const snoozeAck = memo.acknowledgments && memo.acknowledgments.find(a => a.user === selectedUser._id && a.status === 'snoozed');
+                  const statusProps = getMemoStatusProps(memo, snoozeAck);
+                  return (
+                    <li key={memo.id} className={`p-4 rounded-lg border shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1 ${statusProps.bg} ${statusProps.border} ${statusProps.faded ? 'opacity-60' : ''}`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        {statusProps.icon}
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold border ${statusProps.text} ${statusProps.border} bg-white/70`}>{statusProps.label}</span>
+                        <span className="text-xs text-base-content/60">{formatDate(memo.createdAt)}</span>
+                        {statusProps.label === 'Snoozed' && snoozeAck && (
+                          <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            Snoozed until {formatDate(snoozeAck.snoozedUntil)}
+                          </span>
+                        )}
+                      </div>
+                      <div className={`font-semibold text-lg ${statusProps.text}`}>{memo.title}</div>
+                      <div className={`text-sm mb-1 ${statusProps.text}`}>{memo.content}</div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -187,16 +353,72 @@ export default function MemosPage() {
             <p className="text-base-content/70">No memos available.</p>
           ) : (
             <ul className="space-y-3">
-              {companyMemos.map((memo) => (
-                <li key={memo._id} className="p-4 rounded-lg bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">All</span>
-                    <span className="text-xs text-base-content/60">{formatDate(memo.createdAt)}</span>
-                  </div>
-                  <div className="font-semibold text-base-content text-lg">{memo.title}</div>
-                  <div className="text-sm text-base-content/80 mb-1">{memo.content}</div>
-                </li>
-              ))}
+              {companyMemos.map((memo) => {
+                const isAcknowledged = acknowledgedMemos.includes(memo.id) || (memo.acknowledgments && memo.acknowledgments.some(a => a.user === authUser?._id && a.status === 'acknowledged'));
+                const isCreator = authUser && memo.createdBy && (memo.createdBy._id === authUser._id || memo.createdBy === authUser._id);
+                const snoozeAck = memo.acknowledgments && memo.acknowledgments.find(a => a.user === authUser?._id && a.status === 'snoozed');
+                const statusProps = getMemoStatusProps(memo, snoozeAck);
+                const isDeleted = memo.status === 'deleted';
+                return (
+                  <li key={memo.id} className={`p-4 rounded-lg border shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1 ${statusProps.bg} ${statusProps.border} ${isDeleted ? 'opacity-60 pointer-events-none' : ''}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      {statusProps.icon}
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold border ${statusProps.text} ${statusProps.border} bg-white/70`}>{statusProps.label}</span>
+                      <span className="text-xs text-base-content/60">{formatDate(memo.createdAt)}</span>
+                      {statusProps.label === 'Snoozed' && snoozeAck && (
+                        <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          Snoozed until {formatDate(snoozeAck.snoozedUntil)}
+                        </span>
+                      )}
+                      {isAcknowledged && statusProps.label !== 'Snoozed' ? (
+                        <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">Read</span>
+                      ) : !isDeleted && (
+                        <button
+                          className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition disabled:opacity-50"
+                          onClick={() => handleAcknowledge(memo.id)}
+                          disabled={statusUpdating[memo.id]}
+                        >
+                          {statusUpdating[memo.id] ? '...' : 'Mark as Read'}
+                        </button>
+                      )}
+                      {!isDeleted && (
+                        <button
+                          className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200 hover:bg-yellow-200 transition disabled:opacity-50"
+                          onClick={() => { setShowSnoozeModal(true); setSnoozingMemoId(memo.id); }}
+                          disabled={snoozing}
+                        >
+                          {snoozing ? '...' : 'Snooze'}
+                        </button>
+                      )}
+                      {isCreator && !isDeleted && (
+                        <>
+                          <button
+                            className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-error/10 text-error border border-error/20 hover:bg-error/20 transition disabled:opacity-50"
+                            onClick={() => handleDelete(memo.id)}
+                            disabled={statusUpdating[memo.id]}
+                          >
+                            Delete
+                          </button>
+                          <select
+                            className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold border border-base-300 bg-base-100 disabled:opacity-50"
+                            value={memo.status}
+                            disabled={statusUpdating[memo.id]}
+                            onChange={e => handleStatusChange(memo.id, e.target.value)}
+                          >
+                            <option value="active">Active</option>
+                            <option value="expired">Expired</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="deleted">Deleted</option>
+                          </select>
+                        </>
+                      )}
+                    </div>
+                    <div className={`font-semibold text-lg ${statusProps.text}`}>{memo.title}</div>
+                    <div className={`text-sm mb-1 ${statusProps.text}`}>{memo.content}</div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </CardContent>
@@ -210,16 +432,38 @@ export default function MemosPage() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-3">
-              {userMemosList.map((memo) => (
-                <li key={memo._id} className="p-4 rounded-lg bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-secondary/10 text-secondary border border-secondary/20">User</span>
-                    <span className="text-xs text-base-content/60">{formatDate(memo.createdAt)}</span>
-                  </div>
-                  <div className="font-semibold text-base-content text-lg">{memo.title}</div>
-                  <div className="text-sm text-base-content/80 mb-1">{memo.content}</div>
-                </li>
-              ))}
+              {userMemosList.map((memo) => {
+                const isAcknowledged = acknowledgedMemos.includes(memo.id) || (memo.acknowledgments && memo.acknowledgments.some(a => a.user === authUser?._id && a.status === 'acknowledged'));
+                const isCreator = authUser && memo.createdBy && (memo.createdBy._id === authUser._id || memo.createdBy === authUser._id);
+                return (
+                  <li key={memo.id} className="p-4 rounded-lg bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-secondary/10 text-secondary border border-secondary/20">User</span>
+                      <span className="text-xs text-base-content/60">{formatDate(memo.createdAt)}</span>
+                      {isAcknowledged ? (
+                        <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">Read</span>
+                      ) : (
+                        <button
+                          className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition"
+                          onClick={() => handleAcknowledge(memo.id)}
+                        >
+                          Mark as Read
+                        </button>
+                      )}
+                      {isCreator && (
+                        <button
+                          className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-error/10 text-error border border-error/20 hover:bg-error/20 transition"
+                          onClick={() => handleDelete(memo.id)}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                    <div className="font-semibold text-base-content text-lg">{memo.title}</div>
+                    <div className="text-sm text-base-content/80 mb-1">{memo.content}</div>
+                  </li>
+                );
+              })}
             </ul>
           </CardContent>
         </Card>
@@ -253,6 +497,12 @@ export default function MemosPage() {
           )}
         </CardContent>
       </Card>
+      <SnoozeModal
+        show={showSnoozeModal}
+        onClose={() => { setShowSnoozeModal(false); setSnoozingMemoId(null); }}
+        onSnooze={(duration, comments) => handleSnooze(snoozingMemoId, duration, comments)}
+        snoozing={snoozing}
+      />
     </div>
   );
 }
