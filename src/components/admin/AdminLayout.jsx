@@ -44,7 +44,9 @@ export default function AdminLayout() {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-16 border-t inset-y-0 left-0 z-50 w-64 transform bg-base-200 border-r border-base-300 shadow-lg transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`z-50 w-64 transform bg-base-200 border-r border-base-300 shadow-lg transition-transform duration-300 ease-in-out 
+          fixed top-16 inset-y-0 left-0 
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
       >
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center justify-between border-b border-base-300 px-4 md:justify-center bg-base-100">
@@ -100,7 +102,7 @@ export default function AdminLayout() {
 
 
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col h-screen">
+      <div className="flex flex-1 flex-col h-screen md:ml-64">
         <header className="h-16 flex items-center justify-between px-4 border-b border-base-300 bg-base-100/80 backdrop-blur z-30 shadow-sm">
           <h1 className="text-lg font-semibold text-primary">
             {adminNavItems.find(item => location.pathname === item.path)?.name || 'Admin'}
