@@ -55,7 +55,7 @@ export default function MessagesPage() {
       ? 'bg-base-300 hover:bg-base-400 border-base-400 text-base-content'
       : 'bg-base-100 hover:bg-base-200 border-base-300 text-base-content';
     return (
-      <div className={`${textColor} h-[calc(100vh-4rem)] pt-16 w-full flex justify-center items-center`}>
+      <div className={`${textColor} h-[calc(100vh-4rem)] pt-10 w-full flex justify-center items-center`}>
         
           {/* Main Chat */}
           <div className={`flex flex-col w-full max-w-6xl h-full border-t ${borderColor} ${chatBg} rounded-xl ${chatShadow} transition-all duration-300`}>

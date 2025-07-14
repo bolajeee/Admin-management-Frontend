@@ -46,7 +46,7 @@ const HomePage = () => {
               </div>
 
               {/* Drawer Panel (Tasks + Memos) */}
-              <div className="w-[280px] flex flex-col border-l border-base-300 bg-base-100">
+              <div className="w-[380px] flex flex-col border-l border-base-300 bg-base-100">
                 {/* Tasks Header + Content */}
                 <div className="flex flex-col border-b border-base-300 min-h-0">
                   <div className="flex items-center justify-between px-3 py-2 font-semibold border-b border-base-300">
