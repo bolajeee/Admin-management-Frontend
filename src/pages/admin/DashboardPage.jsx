@@ -25,7 +25,7 @@ export default function DashboardPage() {
 
   const [showMemoModal, setShowMemoModal] = useState(false);
   const [memoText, setMemoText] = useState('');
-  const [memoRoute, setMemoRoute] = useState('/memos/send-company');
+  // No need for memoRoute, use /memos/broadcast directly
   const [sendingMemo, setSendingMemo] = useState(false);
 
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -138,7 +138,7 @@ export default function DashboardPage() {
         onSendMemo={async () => {
           setSendingMemo(true);
           try {
-            await axiosInstance.post(memoRoute, {
+            await axiosInstance.post('/memos/broadcast', {
               title: memoText.substring(0, 20),
               content: memoText,
             });

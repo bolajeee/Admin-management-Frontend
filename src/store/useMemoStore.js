@@ -12,7 +12,13 @@ export const useMemoStore = create((set) => ({
     set({ isMemosLoading: true });
     try {
       const response = await axiosInstance.get("/memos/all");
-      set({ memos: Array.isArray(response.data) ? response.data : [] });
+      let memos = [];
+      if (Array.isArray(response.data)) {
+        memos = response.data;
+      } else if (Array.isArray(response.data.data)) {
+        memos = response.data.data;
+      }
+      set({ memos });
       toast.success("Company memos fetched successfully");
     } catch (error) {
       console.error("Error fetching company memos", error);
@@ -31,7 +37,13 @@ export const useMemoStore = create((set) => ({
     set({ isUserMemosLoading: true });
     try {
       const response = await axiosInstance.get(`/memos/user/${userId}`);
-      set({ userMemos: Array.isArray(response.data) ? response.data : [] });
+      let userMemos = [];
+      if (Array.isArray(response.data)) {
+        userMemos = response.data;
+      } else if (Array.isArray(response.data.data)) {
+        userMemos = response.data.data;
+      }
+      set({ userMemos });
       toast.success("User memos fetched successfully");
     } catch (error) {
       console.error("Error fetching user memos", error);

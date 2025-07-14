@@ -25,7 +25,7 @@ export default function MemoModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-md bg-base-300 text-sm"
+            className="px-4 py-2 rounded-md border border-base-300 bg-base-300 text-base-content text-sm font-medium transition-colors hover:bg-base-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             Cancel
           </button>
@@ -33,7 +33,7 @@ export default function MemoModal({
             type="button"
             onClick={onSendMemo}
             disabled={sendingMemo || memoText.trim() === ''}
-            className="px-4 py-2 rounded-md bg-primary text-white text-sm"
+            className="px-4 py-2 rounded-md bg-primary text-white text-sm font-medium transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             {sendingMemo ? 'Sending...' : 'Send Memo'}
           </button>
