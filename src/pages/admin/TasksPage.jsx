@@ -29,6 +29,8 @@ export default function TasksPage() {
   const [filters, setFilters] = useState({ status: '', priority: '', assignee: '', category: '' });
   const [selectedTask, setSelectedTask] = useState(null);
   const [userInfoSidebar, setUserInfoSidebar] = useState(null); // For showing user info sidebar
+  // Remove userInfoModal state, restore userInfoSidebar
+  // const [userInfoModal, setUserInfoModal] = useState(null);
 
   useEffect(() => {
     getTasks(filters);
@@ -97,6 +99,11 @@ export default function TasksPage() {
 
   // Helper to get user object by ID
   const getUserById = (id) => users.find(u => u._id === id);
+
+  const handleCloseTaskDetails = () => {
+    setSelectedTask(null);
+    setUserInfoSidebar(null);
+  };
 
   return (
     <div data-theme={theme} className="min-h-screen p-6 bg-base-200">
@@ -224,6 +231,7 @@ export default function TasksPage() {
                             size="w-8 h-8"
                             textSize="text-xs"
                             showTooltip={true}
+                            onClick={setUserInfoSidebar}
                           />
                         );
                       })}
@@ -313,11 +321,13 @@ export default function TasksPage() {
           <div className="flex-1" onClick={() => setUserInfoSidebar(null)} />
         </div>
       )}
+      {/* User Info Modal */}
+      {/* Removed User Info Modal as it's now handled by the sidebar */}
       {/* TaskDetailsModal: only render if selectedTask and selectedTask._id exist */}
       {selectedTask && selectedTask._id && (
         <TaskDetailsModal
           task={selectedTask}
-          onClose={() => setSelectedTask(null)}
+          onClose={handleCloseTaskDetails}
           onDelete={handleDeleteTask}
           users={users}
           getUserById={getUserById}

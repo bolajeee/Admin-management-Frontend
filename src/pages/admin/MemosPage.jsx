@@ -11,6 +11,7 @@ import { axiosInstance } from '../../lib/axios';
 import { useAuthStore } from '../../store/useAuthStore';
 import toast from 'react-hot-toast';
 import { CheckCircle, Clock, Trash2, Info, XCircle } from 'lucide-react';
+import UserAvatar from '../../components/ui/UserAvatar';
 // Simple date formatting helper
 function formatDate(date) {
   if (!date) return '';
@@ -274,6 +275,7 @@ export default function MemosPage() {
                 {userMemos.map((memo) => {
                   const snoozeAck = memo.acknowledgments && memo.acknowledgments.find(a => a.user === selectedUser._id && a.status === 'snoozed');
                   const statusProps = getMemoStatusProps(memo, snoozeAck);
+                  const isDeleted = memo.status === 'deleted';
                   return (
                     <li key={memo.id} className={`p-4 rounded-lg border shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1 ${statusProps.bg} ${statusProps.border} ${statusProps.faded ? 'opacity-60' : ''}`}>
                       <div className="flex items-center gap-2 mb-1">
@@ -360,7 +362,11 @@ export default function MemosPage() {
                 const isDeleted = memo.status === 'deleted';
                 return (
                   <li key={memo.id} className={`p-4 rounded-lg border shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1 ${statusProps.bg} ${statusProps.border} ${isDeleted ? 'opacity-60 pointer-events-none' : ''}`}>
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-3 mb-1">
+                      {memo.createdBy && (
+                        <UserAvatar user={typeof memo.createdBy === 'object' ? memo.createdBy : users.find(u => u._id === memo.createdBy)} size="w-8 h-8" textSize="text-xs" showTooltip={true} />
+                      )}
+                      <span className="font-semibold text-base-content text-base">{(memo.createdBy && (memo.createdBy.name || memo.createdBy.email)) || 'System'}</span>
                       {statusProps.icon}
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold border ${statusProps.text} ${statusProps.border} bg-white/70`}>{statusProps.label}</span>
                       <span className="text-xs text-base-content/60">{formatDate(memo.createdAt)}</span>
@@ -438,11 +444,24 @@ export default function MemosPage() {
               {userMemosList.map((memo) => {
                 const isAcknowledged = memo.acknowledgments && memo.acknowledgments.some(a => a.user === authUser?._id && a.status === 'acknowledged');
                 const isCreator = authUser && memo.createdBy && (memo.createdBy._id === authUser._id || memo.createdBy === authUser._id);
+                const snoozeAck = memo.acknowledgments && memo.acknowledgments.find(a => a.user === authUser?._id && a.status === 'snoozed');
+                const statusProps = getMemoStatusProps(memo, snoozeAck);
                 return (
-                  <li key={memo.id} className="p-4 rounded-lg bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-secondary/10 text-secondary border border-secondary/20">User</span>
+                  <li key={memo.id} className={`p-4 rounded-lg border shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1 ${statusProps.bg} ${statusProps.border} ${statusProps.faded ? 'opacity-60' : ''}`}>
+                    <div className="flex items-center gap-3 mb-1">
+                      {memo.createdBy && (
+                        <UserAvatar user={typeof memo.createdBy === 'object' ? memo.createdBy : users.find(u => u._id === memo.createdBy)} size="w-8 h-8" textSize="text-xs" showTooltip={true} />
+                      )}
+                      <span className="font-semibold text-base-content text-base">{(memo.createdBy && (memo.createdBy.name || memo.createdBy.email)) || 'System'}</span>
+                      {statusProps.icon}
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold border ${statusProps.text} ${statusProps.border} bg-white/70`}>{statusProps.label}</span>
                       <span className="text-xs text-base-content/60">{formatDate(memo.createdAt)}</span>
+                      {statusProps.label === 'Snoozed' && snoozeAck && (
+                        <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          Snoozed until {formatDate(snoozeAck.snoozedUntil)}
+                        </span>
+                      )}
                       {isAcknowledged ? (
                         <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">Read</span>
                       ) : (
@@ -486,9 +505,9 @@ export default function MemosPage() {
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {users.map((user) => (
-                  <div key={user._id} className="flex flex-col gap-2 p-5 rounded-xl bg-base-100 border border-base-300 shadow hover:shadow-lg transition-shadow">
+                  <div key={user._id} className="flex flex-col gap-2 p-5 rounded-xl bg-base-100 border border-base-300 shadow-md transition-all duration-300 hover:shadow-2xl hover:-rotate-2 hover:scale-[1.025] hover:z-10 cursor-pointer">
                     <div className="flex items-center gap-3 mb-2">
-                      <User className="h-6 w-6 text-primary" />
+                      <UserAvatar user={user} size="w-10 h-10" textSize="text-base" showTooltip={true} />
                       <span className="font-semibold text-base-content text-lg">{user.name || user.email}</span>
                     </div>
                     <div className="flex gap-2">
