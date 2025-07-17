@@ -43,6 +43,13 @@ export default function MessagesPage() {
     // eslint-disable-next-line
   }, [id, users]);
 
+  // Helper: get user online status (stub, replace with real logic if available)
+  const getUserStatus = (user) => user.online ? 'online' : 'offline';
+  const getUserStatusColor = (status) => status === 'online' ? 'bg-green-400' : 'bg-gray-400';
+  // Helper: get last message preview (stub, replace with real logic if available)
+  const getLastMessagePreview = (user) => user.lastMessage || 'No messages yet';
+  const getUnreadCount = (user) => user.unreadCount || 0;
+
   // If viewing a specific chat, render the HomePage-like chat interface
   if (id && selectedUser) {
     // Determine border and background classes based on theme
@@ -60,20 +67,33 @@ export default function MessagesPage() {
 
         {/* Main Chat */}
         <div className={`flex flex-col w-full max-w-6xl h-full border-t ${borderColor} ${chatBg} rounded-xl ${chatShadow} transition-all duration-300`}>
-          {/* Cancel Button */}
-          <div className="px-3 py-2 border-b border-base-300 bg-transparent flex items-center justify-between rounded-t-xl">
+          {/* Chat Header with user info */}
+          <div className="px-3 py-2 border-b border-base-300 bg-base-100/90 flex items-center gap-4 rounded-t-xl shadow-sm">
             <button
               className={`btn btn-sm border font-medium rounded-full px-4 py-1 shadow-md transition-all duration-200 ${cancelBtn}`}
               onClick={() => navigate('/admin/messages')}
+              title="Back to user list"
             >
-              Cancel
+              ← Back
             </button>
-            <span className="font-semibold text-lg text-primary">Chat</span>
+            <UserAvatar user={selectedUser} size="w-10 h-10" textSize="text-base" showTooltip={true} />
+            <div className="flex flex-col flex-1">
+              <span className="font-semibold text-base-content text-lg">{selectedUser.name || selectedUser.email}</span>
+              <span className="text-xs text-base-content/60">{selectedUser.email}</span>
+              <span className="flex items-center gap-1 text-xs mt-1">
+                <span className={`w-2 h-2 rounded-full ${getUserStatusColor(getUserStatus(selectedUser))}`}></span>
+                {getUserStatus(selectedUser)}
+              </span>
+            </div>
           </div>
-          <div className="flex-1 min-h-0 h-0 overflow-y-auto px-2 pb-2 pt-1">
+          <div className="flex-1 min-h-0 h-0 overflow-y-auto px-2 pb-2 pt-1 bg-base-200/80">
             <ChatContainer showHeader={false} />
           </div>
         </div>
+        {/* Floating new message button (mobile) */}
+        <Link to="/admin/messages" className="btn btn-primary fixed bottom-6 right-6 z-40 shadow-lg rounded-full md:hidden" title="New Message">
+          <Mail className="h-6 w-6" />
+        </Link>
       </div>
     );
   }
@@ -84,8 +104,9 @@ export default function MessagesPage() {
       <h1 className="text-2xl font-bold mb-4 text-primary">Messages</h1>
       {/* Users List */}
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
           <CardTitle>All Users</CardTitle>
+          <span className="text-base-content/60 text-sm">({users.length})</span>
         </CardHeader>
         <CardContent className="pt-2">
           {isUsersLoading ? (
@@ -93,23 +114,37 @@ export default function MessagesPage() {
           ) : users.length === 0 ? (
             <div className="text-base-content/70">No users found.</div>
           ) : (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {users.map((user) => (
-                <div
-                  key={user._id}
-                  className="flex flex-col gap-1 p-3 rounded-xl bg-base-100 shadow-md transition-all duration-300 hover:shadow-2xl hover:-rotate-2 hover:scale-[1.025] hover:z-10 border border-base-300 cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 mb-1">
-                    <UserAvatar user={user} size="w-10 h-10" textSize="text-base" showTooltip={true} />
-                    <span className="font-semibold text-base-content text-base">{user.name || user.email}</span>
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {users.map((user) => {
+                const status = getUserStatus(user);
+                const unread = getUnreadCount(user);
+                return (
+                  <div
+                    key={user._id}
+                    className="flex flex-col gap-2 p-5 rounded-xl bg-base-100 border border-base-300 shadow-md transition-all duration-300 hover:shadow-2xl hover:-rotate-2 hover:scale-[1.025] hover:z-10 cursor-pointer group relative overflow-hidden"
+                    style={{ background: 'linear-gradient(135deg, rgba(245,245,255,0.7) 0%, rgba(230,240,255,0.5) 100%)' }}
+                  >
+                    {/* Online status badge */}
+                    <span className={`absolute top-4 left-4 w-3 h-3 rounded-full border-2 border-base-100 ${getUserStatusColor(status)}`} title={status}></span>
+                    <div className="flex items-center gap-3 mb-1">
+                      <UserAvatar user={user} size="w-12 h-12" textSize="text-lg" showTooltip={true} />
+                      <div className="flex flex-col flex-1">
+                        <span className="font-semibold text-base-content text-lg">{user.name || user.email}</span>
+                        <span className="text-xs text-base-content/60">{user.email}</span>
+                        <span className="text-xs text-base-content/60 mt-1">{getLastMessagePreview(user)}</span>
+                      </div>
+                      {unread > 0 && (
+                        <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-primary text-white shadow" title="Unread messages">{unread}</span>
+                      )}
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <Link to={`/admin/messages/${user._id}`} className="btn btn-sm btn-primary flex items-center gap-1 rounded-full px-4 py-2 text-base-content font-medium shadow hover:shadow-md" title="Open chat">
+                        <Mail className="h-4 w-4" /> Message
+                      </Link>
+                    </div>
                   </div>
-                  <div className="flex gap-1">
-                    <Link to={`/admin/messages/${user._id}`} className="btn btn-xs btn-primary flex items-center gap-1 rounded-full px-3 py-1 text-base-content font-medium shadow hover:shadow-md">
-                      <Mail className="h-4 w-4" /> Message
-                    </Link>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

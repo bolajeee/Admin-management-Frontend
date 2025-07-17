@@ -93,8 +93,9 @@ const ChatContainer = ({ showHeader = true }) => {
                         ? 'bg-base-300 text-base-content border-base-400'
                         : 'bg-base-200 text-base-content border-base-300'
                       } transition-all duration-200`}
+                    style={{ color: isOwn ? undefined : 'var(--tw-prose-body, #1a202c)' }} // fallback for base-content
                   >
-                    {msg.text && <span className='block text-sm sm:text-base leading-relaxed'>{msg.text}</span>}
+                    {msg.text && <span className='block text-sm sm:text-base leading-relaxed text-base-content'>{msg.text}</span>}
                     {imageUrl && (
                       <img
                         src={imageUrl}
@@ -107,10 +108,10 @@ const ChatContainer = ({ showHeader = true }) => {
 
                   {/* Timestamp and Sender */}
                   <div className={`flex gap-3 text-xs mt-2 ${isOwn ? 'justify-end' : 'justify-start'} w-full`}>
-                    <span className={`${isOwn ? 'text-primary/70' : 'text-base-content/70'}`}>
+                    <span className={`${isOwn ? 'text-primary/70' : 'text-base-content/70'} font-semibold`}>
                       {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                     </span>
-                    <span className={`${isOwn ? 'text-primary font-semibold' : 'text-gray-500 dark:text-gray-400 font-medium'}`}>
+                    <span className={`${isOwn ? 'text-primary font-semibold' : 'text-base-content font-medium'}`}>
                       {isOwn ? 'You' : msg.senderName || 'User'}
                     </span>
                   </div>
