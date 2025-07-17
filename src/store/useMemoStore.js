@@ -2,11 +2,15 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 
-export const useMemoStore = create((set) => ({
+export const useMemoStore = create((set, get) => ({
   memos: [],
   userMemos: [],
   isMemosLoading: false,
   isUserMemosLoading: false,
+  memoActionLoading: {},
+
+  setMemoActionLoading: (memoId, isLoading) =>
+    set(state => ({ memoActionLoading: { ...state.memoActionLoading, [memoId]: isLoading } })),
 
   getMemos: async () => {
     set({ isMemosLoading: true });
@@ -57,5 +61,95 @@ export const useMemoStore = create((set) => ({
       set({ isUserMemosLoading: false });
     }
   },
+
+  /**
+   * Send company wide memo
+   * @param {Object} memoData
+   */
+  sendCompanyWideMemo: async (memoData) => {
+    set({ isMemosLoading: true });
+    if (!memoData.content) {
+      toast.error("Title and content are required to send a memo");
+      set({ isMemosLoading: false });
+      return false; // Return false to indicate failure
+    }
+
+    try {
+      const response = await axiosInstance.post("/memos/broadcast", memoData);
+      if (response.status === 201) {
+        toast.success("Company wide memo sent successfully");
+        set((state) => ({
+          memos: [response.data.memo || response.data, ...state.memos]
+        }));
+      } else {
+        toast.error("Failed to send company wide memo");
+      }
+      set({ isMemosLoading: false });
+    } catch (error) {
+      console.error("Error sending company wide memo", error);
+      toast.error("Error sending company wide memo");
+      set({ isMemosLoading: false });
+    }
+  },
+
+  /**
+   * Mark memo as read with loading and error handling
+   */
+  markMemoAsRead: async (memoId, userId) => {
+    const { setMemoActionLoading, markMemoAsRead, getUserMemos } = get();
+    setMemoActionLoading(memoId, true);
+    try {
+      await markMemoAsRead(memoId, userId);
+      if (userId) await getUserMemos(userId);
+    } finally {
+      setMemoActionLoading(memoId, false);
+    }
+  },
+
+  /**
+   * Delete memo for the current user only
+   */
+  deleteMemo: async (memoId, userId) => {
+    const { setMemoActionLoading, getUserMemos } = get();
+    setMemoActionLoading(memoId, true);
+    try {
+      await axiosInstance.delete(`/memos/${memoId}`);
+      toast.success('Memo deleted for you!');
+      if (userId) await getUserMemos(userId);
+    } catch (e) {
+      toast.error('Failed to delete memo.');
+    } finally {
+      setMemoActionLoading(memoId, false);
+    }
+  },
+
+  /**
+   * Delete memo globally (admin only)
+   */
+  deleteMemoGlobal: async (memoId, userId) => {
+    const { setMemoActionLoading, getMemos, getUserMemos } = get();
+    setMemoActionLoading(memoId, true);
+    try {
+      await axiosInstance.delete(`/memos/${memoId}?global=true`);
+      toast.success('Memo deleted globally!');
+      await getMemos();
+      if (userId) await getUserMemos(userId);
+    } catch (e) {
+      toast.error('Failed to delete memo globally.');
+    } finally {
+      setMemoActionLoading(memoId, false);
+    }
+  },
+
+  markMemoAsRead: async (memoId, userId) => {
+    try {
+      await axiosInstance.patch(`/memos/${memoId}/read`);
+      toast.success('Memo marked as read!');
+    } catch (e) {
+      toast.error('Failed to mark as read.');
+    }
+  },
+
+
 
 }))

@@ -127,6 +127,8 @@ export default function MemosPage() {
   const isUserMemosLoading = useMemoStore((state) => state.isUserMemosLoading);
   const getMemos = useMemoStore.getState().getMemos;
   const getUserMemos = useMemoStore.getState().getUserMemos;
+  const { markMemoAsRead, deleteMemo, deleteMemoGlobal, memoActionLoading, sendCompanyWideMemo } = useMemoStore();
+
 
   const authUser = useAuthStore((state) => state.authUser);
 
@@ -134,35 +136,19 @@ export default function MemosPage() {
   const navigate = useNavigate();
 
   const [showMemoModal, setShowMemoModal] = useState(false);
-  const [memoText, setMemoText] = useState('');
+  const [memoTitle, setMemoTitle] = useState("");
+  const [memoText, setMemoText] = useState("");
   const [sendingMemo, setSendingMemo] = useState(false);
   const usersCount = users.length;
   const [acknowledgedMemos, setAcknowledgedMemos] = useState([]);
-  const handleAcknowledge = async (memoId) => {
-    try {
-      await axiosInstance.patch(`/memos/${memoId}/acknowledge`);
-      setAcknowledgedMemos((prev) => [...prev, memoId]);
-      getMemos();
-      toast.success('Memo marked as read!');
-    } catch (e) {
-      toast.error('Failed to mark as read.');
-    }
-  };
-  const handleDelete = async (memoId) => {
-    if (!window.confirm('Are you sure you want to delete this memo?')) return;
-    try {
-      await axiosInstance.delete(`/memos/${memoId}`);
-      getMemos();
-      toast.success('Memo deleted!');
-    } catch (e) {
-      toast.error('Failed to delete memo.');
-    }
-  };
+
 
   const [showSnoozeModal, setShowSnoozeModal] = useState(false);
   const [snoozingMemoId, setSnoozingMemoId] = useState(null);
   const [snoozing, setSnoozing] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState({}); // { [memoId]: bool }
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTargetMemoId, setDeleteTargetMemoId] = useState(null);
 
   const handleSnooze = async (memoId, duration, comments) => {
     setSnoozing(true);
@@ -190,6 +176,12 @@ export default function MemosPage() {
     } finally {
       setStatusUpdating(s => ({ ...s, [memoId]: false }));
     }
+  };
+
+
+  const handleOpenDeleteModal = (memoId) => {
+    setDeleteTargetMemoId(memoId);
+    setShowDeleteModal(true);
   };
 
   useEffect(() => {
@@ -248,18 +240,21 @@ export default function MemosPage() {
           <MemoModal
             show={showMemoModal}
             onClose={() => setShowMemoModal(false)}
+            memoTitle={memoTitle}
+            setMemoTitle={setMemoTitle}
             memoText={memoText}
             setMemoText={setMemoText}
             sendingMemo={sendingMemo}
             onSendMemo={async () => {
               setSendingMemo(true);
               try {
-                await axiosInstance.post('/memos', {
-                  title: memoText.substring(0, 20),
+                await sendCompanyWideMemo({
+                  title: memoTitle,
                   content: memoText,
                   recipients: [selectedUser._id],
                 });
                 setShowMemoModal(false);
+                setMemoTitle("");
                 setMemoText("");
                 getUserMemos(selectedUser._id);
               } catch {
@@ -321,19 +316,23 @@ export default function MemosPage() {
       <MemoModal
         show={showMemoModal}
         onClose={() => setShowMemoModal(false)}
+        memoTitle={memoTitle}
+        setMemoTitle={setMemoTitle}
         memoText={memoText}
         setMemoText={setMemoText}
         sendingMemo={sendingMemo}
         onSendMemo={async () => {
           setSendingMemo(true);
           try {
-            await axiosInstance.post('/memos/broadcast', {
-              title: memoText.substring(0, 20),
+            await sendCompanyWideMemo({
+              title: memoTitle,
               content: memoText,
             });
             setShowMemoModal(false);
+            setMemoTitle("");
             setMemoText("");
             getMemos();
+            getUserMemos(authUser?._id);
           } catch {
             // error handled in modal
           } finally {
@@ -376,10 +375,10 @@ export default function MemosPage() {
                       ) : !isDeleted && (
                         <button
                           className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition disabled:opacity-50"
-                          onClick={() => handleAcknowledge(memo.id)}
-                          disabled={statusUpdating[memo.id]}
+                          onClick={() => markMemoAsRead(memo.id, authUser?._id)}
+                          disabled={memoActionLoading[memo.id]}
                         >
-                          {statusUpdating[memo.id] ? '...' : 'Mark as Read'}
+                          {memoActionLoading[memo.id] ? '...' : 'Mark as Read'}
                         </button>
                       )}
                       {!isDeleted && (
@@ -395,8 +394,8 @@ export default function MemosPage() {
                         <>
                           <button
                             className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-error/10 text-error border border-error/20 hover:bg-error/20 transition disabled:opacity-50"
-                            onClick={() => handleDelete(memo.id)}
-                            disabled={statusUpdating[memo.id]}
+                            onClick={() => handleOpenDeleteModal(memo.id)}
+                            disabled={memoActionLoading[memo.id]}
                           >
                             Delete
                           </button>
@@ -424,16 +423,20 @@ export default function MemosPage() {
         </CardContent>
       </Card>
 
-      {/* User-specific memos for the logged-in admin */}
-      {userMemosList.length > 0 && (
-        <Card className="mb-10">
-          <CardHeader>
-            <CardTitle>Your Memos</CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* My Memos section */}
+      <Card className="mb-10">
+        <CardHeader>
+          <CardTitle>My Memos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isMemosLoading ? (
+            <div className="text-base-content/70">Loading memos...</div>
+          ) : userMemosList.length === 0 ? (
+            <p className="text-base-content/70">No memos assigned to you.</p>
+          ) : (
             <ul className="space-y-3">
               {userMemosList.map((memo) => {
-                const isAcknowledged = acknowledgedMemos.includes(memo.id) || (memo.acknowledgments && memo.acknowledgments.some(a => a.user === authUser?._id && a.status === 'acknowledged'));
+                const isAcknowledged = memo.acknowledgments && memo.acknowledgments.some(a => a.user === authUser?._id && a.status === 'acknowledged');
                 const isCreator = authUser && memo.createdBy && (memo.createdBy._id === authUser._id || memo.createdBy === authUser._id);
                 return (
                   <li key={memo.id} className="p-4 rounded-lg bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1">
@@ -445,7 +448,7 @@ export default function MemosPage() {
                       ) : (
                         <button
                           className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition"
-                          onClick={() => handleAcknowledge(memo.id)}
+                          onClick={() => markMemoAsRead(memo.id, authUser?._id)}
                         >
                           Mark as Read
                         </button>
@@ -453,7 +456,7 @@ export default function MemosPage() {
                       {isCreator && (
                         <button
                           className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-error/10 text-error border border-error/20 hover:bg-error/20 transition"
-                          onClick={() => handleDelete(memo.id)}
+                          onClick={() => handleOpenDeleteModal(memo.id)}
                         >
                           Delete
                         </button>
@@ -465,44 +468,92 @@ export default function MemosPage() {
                 );
               })}
             </ul>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>All Users</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isUsersLoading ? (
-            <div className="text-base-content/70">Loading users...</div>
-          ) : users.length === 0 ? (
-            <div className="text-base-content/70">No users found.</div>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {users.map((user) => (
-                <div key={user._id} className="flex flex-col gap-2 p-5 rounded-xl bg-base-100 border border-base-300 shadow hover:shadow-lg transition-shadow">
-                  <div className="flex items-center gap-3 mb-2">
-                    <User className="h-6 w-6 text-primary" />
-                    <span className="font-semibold text-base-content text-lg">{user.name || user.email}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Link to={`/admin/memos/${user._id}`} className="btn btn-sm btn-secondary flex items-center gap-1 rounded-full px-4 py-2 text-base-content font-medium shadow hover:shadow-md">
-                      <FileText className="h-4 w-4" /> View Memos
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
           )}
         </CardContent>
       </Card>
+
+      {/* User-specific memos for the logged-in admin */}
+      {userMemosList.length > 0 && (
+        <Card className="mb-10">
+          <CardHeader>
+            <CardTitle>All Users</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isUsersLoading ? (
+              <div className="text-base-content/70">Loading users...</div>
+            ) : users.length === 0 ? (
+              <div className="text-base-content/70">No users found.</div>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {users.map((user) => (
+                  <div key={user._id} className="flex flex-col gap-2 p-5 rounded-xl bg-base-100 border border-base-300 shadow hover:shadow-lg transition-shadow">
+                    <div className="flex items-center gap-3 mb-2">
+                      <User className="h-6 w-6 text-primary" />
+                      <span className="font-semibold text-base-content text-lg">{user.name || user.email}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Link to={`/admin/memos/${user._id}`} className="btn btn-sm btn-secondary flex items-center gap-1 rounded-full px-4 py-2 text-base-content font-medium shadow hover:shadow-md">
+                        <FileText className="h-4 w-4" /> View Memos
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
       <SnoozeModal
         show={showSnoozeModal}
         onClose={() => { setShowSnoozeModal(false); setSnoozingMemoId(null); }}
         onSnooze={(duration, comments) => handleSnooze(snoozingMemoId, duration, comments)}
         snoozing={snoozing}
       />
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-base-100 p-6 rounded-xl shadow-lg w-[90%] max-w-sm flex flex-col gap-4">
+            <h2 className="text-lg font-bold">Delete Memo</h2>
+            <p>Do you want to delete this memo for everyone or only for you?</p>
+            <div className="flex gap-2 justify-end">
+              <button
+                className="btn btn-error"
+                onClick={() => {
+                  deleteMemoGlobal(deleteTargetMemoId, authUser?._id).then(() => {
+                    getMemos();
+                    if (authUser?._id) getUserMemos(authUser._id);
+                  });
+                  setShowDeleteModal(false);
+                  setDeleteTargetMemoId(null);
+                }}
+              >
+                Delete for everyone
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  deleteMemo(deleteTargetMemoId, authUser?._id).then(() => {
+                    getMemos();
+                    if (authUser?._id) getUserMemos(authUser._id);
+                  });
+                  setShowDeleteModal(false);
+                  setDeleteTargetMemoId(null);
+                }}
+              >
+                Delete for only me
+              </button>
+              <button
+                className="btn"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteTargetMemoId(null);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

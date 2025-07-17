@@ -69,6 +69,7 @@ const App = () => {
           path="/"
           element={
             <RequireAuth>
+              
               <HomePage />
             </RequireAuth>
           }

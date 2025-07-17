@@ -7,6 +7,7 @@ import {
   User,
   LayoutDashboard
 } from "lucide-react";
+import { use, useEffect } from "react";
 
 const Navbar = () => {
   const { logout, authUser } = useAuthStore();
@@ -14,6 +15,7 @@ const Navbar = () => {
 
   const isAdmin = authUser?.role === "admin";
   const isAdminRoute = location.pathname.startsWith("/admin");
+
 
   return (
     <header className="fixed w-full top-0 z-40 border-b border-base-300 backdrop-blur-lg bg-base-100/80">

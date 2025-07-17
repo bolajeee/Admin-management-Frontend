@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useMemoStore } from '../store/useMemoStore';
 import { ScrollText, Loader2, CheckCircle, Clock, Trash2, Info, XCircle } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { axiosInstance } from '../lib/axios';
+
 
 function formatDate(date) {
   if (!date) return '';
@@ -11,107 +10,79 @@ function formatDate(date) {
   return d.toLocaleString();
 }
 
-const getMemoStatusProps = (memo, snoozeAck) => {
-  // If snoozed and snooze not expired, show as snoozed
-  if (snoozeAck && snoozeAck.snoozedUntil && new Date(snoozeAck.snoozedUntil) > new Date()) {
-    return {
-      border: 'border-yellow-400',
-      bg: 'bg-yellow-50 opacity-70',
-      icon: <Clock className="text-yellow-500 w-4 h-4" />,
-      label: 'Snoozed',
-      text: 'text-yellow-700',
-      faded: true,
-      snoozedUntil: snoozeAck.snoozedUntil,
-    };
-  }
-  switch (memo.status) {
-    case 'active':
-      return {
-        border: 'border-green-400',
-        bg: 'bg-green-50',
-        icon: <CheckCircle className="text-green-500 w-4 h-4" />,
-        label: 'Active',
-        text: 'text-green-700',
-        faded: false,
-      };
-    case 'deleted':
-      return {
-        border: 'border-red-400',
-        bg: 'bg-red-50 opacity-60',
-        icon: <Trash2 className="text-red-500 w-4 h-4" />,
-        label: 'Deleted',
-        text: 'text-red-700',
-        faded: true,
-      };
-    case 'expired':
-      return {
-        border: 'border-gray-400',
-        bg: 'bg-gray-50 opacity-70',
-        icon: <Info className="text-gray-500 w-4 h-4" />,
-        label: 'Expired',
-        text: 'text-gray-700',
-        faded: true,
-      };
-    case 'cancelled':
-      return {
-        border: 'border-yellow-400',
-        bg: 'bg-yellow-50 opacity-70',
-        icon: <XCircle className="text-yellow-500 w-4 h-4" />,
-        label: 'Cancelled',
-        text: 'text-yellow-700',
-        faded: true,
-      };
-    default:
-      return {
-        border: 'border-base-300',
-        bg: 'bg-base-200',
-        icon: null,
-        label: memo.status,
-        text: 'text-base-content',
-        faded: false,
-      };
-  }
-};
-
 export default function UserMemosPanel() {
-  const { getUserMemos, userMemos, isUserMemosLoading } = useMemoStore();
+  const { getUserMemos, userMemos, isUserMemosLoading, markMemoAsRead, deleteMemo, memoActionLoading } = useMemoStore();
   const { authUser } = useAuthStore();
   const userId = authUser?._id;
-  const [loading, setLoading] = useState({});
 
   useEffect(() => {
     if (userId) getUserMemos(userId);
   }, [userId, getUserMemos]);
 
-  const handleAcknowledge = async (memoId) => {
-    setLoading(l => ({ ...l, [memoId]: true }));
-    try {
-      await axiosInstance.patch(`/memos/${memoId}/acknowledge`);
-      getUserMemos(userId);
-      toast.success('Memo marked as read!');
-    } catch (e) {
-      toast.error('Failed to mark as read.');
-    } finally {
-      setLoading(l => ({ ...l, [memoId]: false }));
-    }
-  };
-
-  const handleDelete = async (memoId) => {
-    if (!window.confirm('Are you sure you want to delete this memo?')) return;
-    setLoading(l => ({ ...l, [memoId]: true }));
-    try {
-      await axiosInstance.delete(`/memos/${memoId}`);
-      getUserMemos(userId);
-      toast.success('Memo deleted!');
-    } catch (e) {
-      toast.error('Failed to delete memo.');
-    } finally {
-      setLoading(l => ({ ...l, [memoId]: false }));
-    }
-  };
-
   // Filter out deleted memos
   const filteredMemos = (userMemos || []).filter(memo => memo.status !== 'deleted');
+
+  // Move getMemoStatusProps inside the component
+  const getMemoStatusProps = (memo, snoozeAck) => {
+    if (snoozeAck && snoozeAck.snoozedUntil && new Date(snoozeAck.snoozedUntil) > new Date()) {
+      return {
+        border: 'border-yellow-400',
+        bg: 'bg-yellow-50 opacity-70',
+        icon: <Clock className="text-yellow-500 w-4 h-4" />,
+        label: 'Snoozed',
+        text: 'text-yellow-700',
+        faded: true,
+        snoozedUntil: snoozeAck.snoozedUntil,
+      };
+    }
+    switch (memo.status) {
+      case 'active':
+        return {
+          border: 'border-green-400',
+          bg: 'bg-green-50',
+          icon: <CheckCircle className="text-green-500 w-4 h-4" />,
+          label: 'Active',
+          text: 'text-green-700',
+          faded: false,
+        };
+      case 'deleted':
+        return {
+          border: 'border-red-400',
+          bg: 'bg-red-50 opacity-60',
+          icon: <Trash2 className="text-red-500 w-4 h-4" />,
+          label: 'Deleted',
+          text: 'text-red-700',
+          faded: true,
+        };
+      case 'expired':
+        return {
+          border: 'border-gray-400',
+          bg: 'bg-gray-50 opacity-70',
+          icon: <Info className="text-gray-500 w-4 h-4" />,
+          label: 'Expired',
+          text: 'text-gray-700',
+          faded: true,
+        };
+      case 'cancelled':
+        return {
+          border: 'border-yellow-400',
+          bg: 'bg-yellow-50 opacity-70',
+          icon: <XCircle className="text-yellow-500 w-4 h-4" />,
+          label: 'Cancelled',
+          text: 'text-yellow-700',
+          faded: true,
+        };
+      default:
+        return {
+          border: 'border-base-300',
+          bg: 'bg-base-200',
+          icon: null,
+          label: memo.status,
+          text: 'text-base-content',
+          faded: false,
+        };
+    }
+  };
 
   return (
     <div className="p-4 bg-base-100 dark:bg-base-200 flex-1 overflow-y-auto w-full max-w-md md:max-w-lg">
@@ -150,17 +121,17 @@ export default function UserMemosPanel() {
                   ) : !isDeleted && (
                     <button
                       className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition disabled:opacity-50"
-                      onClick={() => handleAcknowledge(memo.id)}
-                      disabled={loading[memo.id]}
+                      onClick={() => markMemoAsRead(memo.id, userId)}
+                      disabled={memoActionLoading[memo.id]}
                     >
-                      {loading[memo.id] ? '...' : 'Mark as Read'}
+                      {memoActionLoading[memo.id] ? '...' : 'Mark as Read'}
                     </button>
                   )}
                   {!isDeleted && (
                     <button
                       className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-error/10 text-error border border-error/20 hover:bg-error/20 transition disabled:opacity-50"
-                      onClick={() => handleDelete(memo.id)}
-                      disabled={loading[memo.id]}
+                      onClick={() => deleteMemo(memo.id, userId)}
+                      disabled={memoActionLoading[memo.id]}
                     >
                       Delete
                     </button>

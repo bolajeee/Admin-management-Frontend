@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useThemeStore } from '../../store/useThemeStore';
+import { useMemoStore } from '../../store/useMemoStore';
 import { axiosInstance } from '../../lib/axios';
+
 
 // Modular components
 import DashboardStats from '../../components/dashboard/DashboardStats';
@@ -13,6 +15,7 @@ import AddUserModal from '../../components/modals/AddUserModal';
 
 export default function DashboardPage() {
   const { theme } = useThemeStore();
+  const { sendCompanyWideMemo, getMemos, markMemoAsRead, memoDelete } = useMemoStore();
   const navigate = useNavigate();
 
   const [stats, setStats] = useState({ employees: null, memos: null, tasks: null, messagesToday: null });
@@ -24,8 +27,8 @@ export default function DashboardPage() {
   const [actionsLoading, setActionsLoading] = useState(true);
 
   const [showMemoModal, setShowMemoModal] = useState(false);
+  const [memoTitle, setMemoTitle] = useState('');
   const [memoText, setMemoText] = useState('');
-  // No need for memoRoute, use /memos/broadcast directly
   const [sendingMemo, setSendingMemo] = useState(false);
 
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -121,7 +124,6 @@ export default function DashboardPage() {
           loading={actionsLoading}
           navigate={navigate}
           onSendMemo={() => {
-            setMemoRoute('/memos/send-company');
             setShowMemoModal(true);
           }}
           onAddUser={() => setShowAddUserModal(true)}
@@ -132,24 +134,25 @@ export default function DashboardPage() {
       <MemoModal
         show={showMemoModal}
         onClose={() => setShowMemoModal(false)}
+        memoTitle={memoTitle}
+        setMemoTitle={setMemoTitle}
         memoText={memoText}
         setMemoText={setMemoText}
         sendingMemo={sendingMemo}
         onSendMemo={async () => {
           setSendingMemo(true);
-          try {
-            await axiosInstance.post('/memos/broadcast', {
-              title: memoText.substring(0, 20),
-              content: memoText,
+          sendCompanyWideMemo({ title: memoTitle, content: memoText })
+            .then(() => {
+              setShowMemoModal(false);
+              setMemoTitle('');
+              setMemoText('');
+            })
+            .catch(() => {
+              toast.error('Failed to send memo');
+            })
+            .finally(() => {
+              setSendingMemo(false);
             });
-            toast.success("Memo sent to all employees!");
-            setShowMemoModal(false);
-            setMemoText("");
-          } catch {
-            toast.error("Failed to send memo.");
-          } finally {
-            setSendingMemo(false);
-          }
         }}
       />
 

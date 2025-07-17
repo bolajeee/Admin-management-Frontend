@@ -3,6 +3,8 @@ import React from 'react';
 export default function MemoModal({
   show,
   onClose,
+  memoTitle,
+  setMemoTitle,
   memoText,
   setMemoText,
   onSendMemo,
@@ -14,6 +16,13 @@ export default function MemoModal({
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
       <div className="bg-base-100 p-6 rounded-xl shadow-lg w-[90%] max-w-lg">
         <h2 className="text-xl font-semibold mb-4">Send Company Memo</h2>
+        <input
+          type="text"
+          value={memoTitle}
+          onChange={e => setMemoTitle(e.target.value)}
+          placeholder="Memo title..."
+          className="w-full p-3 border rounded-md mb-3 bg-base-200 text-base-content"
+        />
         <textarea
           value={memoText}
           onChange={(e) => setMemoText(e.target.value)}
@@ -32,7 +41,7 @@ export default function MemoModal({
           <button
             type="button"
             onClick={onSendMemo}
-            disabled={sendingMemo || memoText.trim() === ''}
+            disabled={sendingMemo || memoTitle.trim() === '' || memoText.trim() === ''}
             className="px-4 py-2 rounded-md bg-primary text-white text-sm font-medium transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             {sendingMemo ? 'Sending...' : 'Send Memo'}
