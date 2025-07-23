@@ -1,314 +1,225 @@
-import React, { useState, useMemo } from 'react';
-import { Tabs, Button, Card, Select, Space, Spin } from 'antd';
-import { 
-  DownloadOutlined, 
-  ReloadOutlined, 
-  ProjectOutlined, 
-  TeamOutlined, 
-  DollarOutlined, 
-  UserOutlined,
-  FallOutlined,
-  FileExcelOutlined,
-  FilePdfOutlined
-} from '@ant-design/icons';
-import dayjs from 'dayjs';
+import React, { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
 import DateRangeSelector from '../../components/reports/DateRangeSelector';
-import MetricCard from '../../components/reports/MetricCard';
-import ProjectPerformance from '../../components/reports/ProjectPerformance';
-import FinancialReports from '../../components/reports/FinancialReports';
-import useReportData from '../../hooks/useReportData';
-import { useThemeStyles } from '../../utils/themeUtils';
-import TeamPerformance from '../../components/reports/TeamPerformance';
+import ReportSelector from '../../components/reports/ReportSelector';
+import ReportMetrics from '../../components/reports/ReportMetrics';
+import TeamPerformanceChart from '../../components/reports/TeamPerformanceChart';
+import ClientActivityChart from '../../components/reports/ClientActivityChart';
+import FinancialReportChart from '../../components/reports/FinancialReportChart';
+import { useReportData } from '../../hooks/useReportData';
+import { axiosInstance } from '../../lib/axios';
+import { Download, RefreshCw } from 'lucide-react';
 
-const { TabPane } = Tabs;
-const { Option } = Select;
+function ReportsPage() {
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [activeReport, setActiveReport] = useState('overview');
+  const [refreshing, setRefreshing] = useState(false);
 
-// Mock data for metrics that aren't in the API
-const mockMetrics = {
-  activeProjects: 12,
-  overdueTasks: 5,
-  teamUtilization: 78,
-  budgetVariance: -4.2,
-};
+  // Get metrics data
+  const {
+    data: metricsData,
+    loading: metricsLoading,
+    error: metricsError
+  } = useReportData('metrics', dateRange);
 
-// Format date for display
-const formatDate = (date) => {
-  return dayjs(date).format('MMM D, YYYY');
-};
+  // Get team performance data
+  const {
+    data: teamData,
+    loading: teamLoading,
+    error: teamError
+  } = useReportData('team-performance', dateRange);
 
-const ExportButton = ({ format, onExport, loading = false }) => {
-  const { getButtonStyles } = useThemeStyles();
-  const icon = format === 'pdf' ? <FilePdfOutlined /> : <FileExcelOutlined />;
-  
-  return (
-    <Button
-      icon={icon}
-      onClick={() => onExport(format)}
-      className={getButtonStyles('ghost')}
-      loading={loading}
-    >
-      {format.toUpperCase()}
-    </Button>
-  );
-};
+  // Get client data
+  const {
+    data: clientData,
+    loading: clientLoading,
+    error: clientError
+  } = useReportData('client-activity', dateRange);
 
-export default function ReportsPage() {
-  const [dateRange, setDateRange] = useState([
-    dayjs().subtract(30, 'day'),
-    dayjs(),
-  ]);
-  const [filters, setFilters] = useState({
-    projectStatus: 'all',
-  });
-  
-  const { data, isLoading, error, refetch } = useReportData(dateRange, filters);
-  const { getCardStyles, getButtonStyles } = useThemeStyles();
-  const styles = getCardStyles();
+  // Get financial data
+  const {
+    data: financeRevenueData,
+    loading: financeRevenueLoading,
+    error: financeRevenueError
+  } = useReportData('finance/revenue', dateRange);
 
-  const handleDateChange = (dates) => {
-    setDateRange(dates);
+  const {
+    data: financeExpenseData,
+    loading: financeExpenseLoading,
+    error: financeExpenseError
+  } = useReportData('finance/categories', dateRange);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // This would trigger a refresh of all report data
+      // The useEffect in the useReportData hook will fetch new data
+      // You could also implement more specific refreshing logic here
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate delay
+    } finally {
+      setRefreshing(false);
+    }
   };
 
-  const handleFilterChange = (name, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const handleExport = async () => {
+    try {
+      const response = await axiosInstance.get(`/reports/export?type=${activeReport}`, {
+        responseType: 'blob'
+      });
+
+      // Create a download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${activeReport}-report.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      alert('Failed to export report. Please try again.');
+    }
   };
 
-  const handleExport = async (format) => {
-    // In a real app, this would trigger an API call to generate a report
-    console.log(`Exporting ${format} report for`, { dateRange, filters });
-    // Simulate export
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log('Export complete!');
-  };
-
-  const refreshData = () => {
-    refetch();
-  };
-  
-  // Merge mock data with API data
-  const metrics = useMemo(() => ({
-    ...mockMetrics,
-    ...(data?.metrics || {})
-  }), [data]);
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <Card className="bg-error/10 border-error/30">
-          <div className="text-error flex flex-col items-center justify-center p-8">
-            <ExclamationCircleOutlined className="text-4xl mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Error Loading Reports</h2>
-            <p className="text-center mb-4">We encountered an error while loading the reports. Please try again.</p>
-            <Button 
-              type="primary" 
-              onClick={refreshData}
-              icon={<ReloadOutlined />}
-              className={getButtonStyles('primary')}
-            >
-              Retry
-            </Button>
+  // Determine what to render based on active report
+  const renderReportContent = () => {
+    switch (activeReport) {
+      case 'team':
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Team Performance Report</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-base-content/60 mb-4">
+                  This report shows task completion and productivity metrics for your team.
+                </p>
+                {teamError && <div className="text-error mb-4">{teamError}</div>}
+                <TeamPerformanceChart data={teamData?.performance} loading={teamLoading} />
+              </CardContent>
+            </Card>
           </div>
-        </Card>
-      </div>
-    );
-  }
+        );
+
+      case 'clients':
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Client Engagement Report</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-base-content/60 mb-4">
+                  This report shows client activity and engagement metrics over time.
+                </p>
+                {clientError && <div className="text-error mb-4">{clientError}</div>}
+                <ClientActivityChart data={clientData?.activity} loading={clientLoading} />
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'finance':
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Financial Reports</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-base-content/60 mb-4">
+                  These reports show revenue trends and expense categories for the selected period.
+                </p>
+                {(financeRevenueError || financeExpenseError) &&
+                  <div className="text-error mb-4">
+                    {financeRevenueError || financeExpenseError}
+                  </div>
+                }
+                <div className="grid md:grid-cols-2 gap-6">
+                  <FinancialReportChart
+                    data={financeRevenueData?.data}
+                    subType="revenue"
+                    loading={financeRevenueLoading}
+                  />
+                  <FinancialReportChart
+                    data={financeExpenseData?.data}
+                    subType="categories"
+                    loading={financeExpenseLoading}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'overview':
+      default:
+        return (
+          <div className="space-y-6">
+            <ReportMetrics metrics={metricsData} loading={metricsLoading} />
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <TeamPerformanceChart data={teamData?.performance} loading={teamLoading} />
+              <ClientActivityChart data={clientData?.activity} loading={clientLoading} />
+            </div>
+
+            <FinancialReportChart
+              data={financeRevenueData?.data}
+              subType="revenue"
+              loading={financeRevenueLoading}
+            />
+          </div>
+        );
+    }
+  };
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Reports & Analytics</h1>
-          <p className="text-gray-500 dark:text-gray-400">Key metrics and insights for your projects and team</p>
-        </div>
-        <Space>
-          <Space.Compact>
-            <ExportButton 
-              format="pdf" 
-              onExport={handleExport} 
-              loading={isLoading}
-            />
-            <ExportButton 
-              format="excel" 
-              onExport={handleExport} 
-              loading={isLoading}
-            />
-          </Space.Compact>
-          <Button 
-            icon={<ReloadOutlined />} 
-            onClick={refreshData}
-            loading={isLoading}
-            className={getButtonStyles('ghost')}
+    <div className="p-6">
+      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h1 className="text-2xl font-bold">Reports & Analytics</h1>
+
+        <div className="flex gap-4 items-center">
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-base-200 hover:bg-base-300 transition-colors"
+            disabled={refreshing}
           >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
-          </Button>
-        </Space>
+          </button>
+
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-content hover:bg-primary/90 transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </button>
+        </div>
       </div>
 
-      {/* Date Range Selector */}
-      <Card className={styles.className}>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <DateRangeSelector 
-            value={dateRange} 
-            onChange={handleDateChange} 
-          />
-          <Select 
-            value={filters.projectStatus}
-            onChange={(value) => handleFilterChange('projectStatus', value)}
-            style={{ width: 200 }}
-            className="w-full md:w-auto"
-            disabled={isLoading}
-          >
-            <Option value="all">All Projects</Option>
-            <Option value="active">Active Projects</Option>
-            <Option value="completed">Completed Projects</Option>
-            <Option value="delayed">Delayed Projects</Option>
-          </Select>
-        </div>
+      <Card className="mb-6">
+        <CardContent className="py-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <ReportSelector activeReport={activeReport} setActiveReport={setActiveReport} />
+            <DateRangeSelector value={dateRange} onChange={setDateRange} />
+          </div>
+        </CardContent>
       </Card>
 
-      {/* Metrics Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <MetricCard 
-          title="Active Projects" 
-          value={metrics.activeProjects} 
-          icon={<ProjectOutlined />}
-          trend={12.5}
-          trendText="from last month"
-        />
-        <MetricCard 
-          title="Overdue Tasks" 
-          value={metrics.overdueTasks} 
-          icon={<FallOutlined className="text-error" />}
-          trend={-8.3}
-          trendText="from last month"
-          className="border-l-4 border-error/50"
-        />
-        <MetricCard 
-          title="Team Utilization" 
-          value={`${metrics.teamUtilization}%`} 
-          icon={<TeamOutlined />}
-          trend={5.2}
-          trendText="from last month"
-        />
-        <MetricCard 
-          title="Budget Variance" 
-          value={`${Math.abs(metrics.budgetVariance)}% ${metrics.budgetVariance >= 0 ? 'Under' : 'Over'}`} 
-          icon={<DollarOutlined className={metrics.budgetVariance >= 0 ? 'text-success' : 'text-error'} />}
-          trend={metrics.budgetVariance}
-          trendText={metrics.budgetVariance >= 0 ? 'under budget' : 'over budget'}
-          className={`border-l-4 ${metrics.budgetVariance >= 0 ? 'border-success/50' : 'border-error/50'}`}
-        />
-      </div>
+      {metricsError && activeReport === 'overview' && (
+        <div className="bg-error/10 border border-error/30 text-error p-4 rounded-lg mb-6">
+          {metricsError}
+        </div>
+      )}
 
-      {/* Main Reports Tabs */}
-      <Tabs 
-        defaultActiveKey="1" 
-        className="report-tabs"
-        onChange={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      >
-        <TabPane 
-          tab={
-            <span className="flex items-center">
-              <ProjectOutlined className="mr-1" />
-              Project Performance
-            </span>
-          } 
-          key="1"
-        >
-          <ProjectPerformance 
-            data={data} 
-            isLoading={isLoading} 
-          />
-        </TabPane>
-        
-        <TabPane 
-          tab={
-            <span className="flex items-center">
-              <TeamOutlined className="mr-1" />
-              Team Performance
-            </span>
-          } 
-          key="2"
-        >
-          <Card className={styles.className}>
-           <TeamPerformance 
-            data={data} 
-            isLoading={isLoading} 
-          />
-          </Card>
-        </TabPane>
-        
-        <TabPane 
-          tab={
-            <span className="flex items-center">
-              <DollarOutlined className="mr-1" />
-              Financial Reports
-            </span>
-          } 
-          key="3"
-        >
-          <FinancialReports />
-        </TabPane>
-        
-        <TabPane 
-          tab={
-            <span className="flex items-center">
-              <UserOutlined className="mr-1" />
-              Client Reports
-            </span>
-          } 
-          key="4"
-        >
-          <Card className={styles.className}>
-            <div className={styles.headerClassName}>
-              <h2 className="text-xl font-semibold">Client Reports</h2>
-            </div>
-            <div className={`${styles.bodyClassName} p-6 text-center`}>
-              <p>Client reports will be available in the next update.</p>
-              <p className="text-sm text-gray-500 mt-2">This will include client engagement metrics, project portfolio, and satisfaction scores.</p>
-            </div>
-          </Card>
-        </TabPane>
-      </Tabs>
-
-      <style jsx global>{`
-        .report-tabs .ant-tabs-nav::before {
-          border-bottom: 1px solid var(--color-border);
-        }
-        .report-tabs .ant-tabs-tab {
-          padding: 12px 16px;
-          margin-right: 8px;
-          border-radius: 8px 8px 0 0;
-          background: var(--color-bg-secondary);
-          border: 1px solid var(--color-border);
-          border-bottom: none;
-          margin-bottom: 0;
-          transition: all 0.2s ease;
-        }
-        .report-tabs .ant-tabs-tab-active {
-          background: var(--color-bg-base);
-          border-bottom: 1px solid var(--color-bg-base);
-          margin-bottom: -1px;
-          box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
-        }
-        .report-tabs .ant-tabs-ink-bar {
-          height: 3px;
-          background: var(--color-primary);
-        }
-        .report-tabs .ant-tabs-tab-btn {
-          color: var(--color-text);
-        }
-        .report-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
-          color: var(--color-primary);
-          font-weight: 500;
-        }
-        .report-tabs .ant-tabs-tab:hover {
-          color: var(--color-primary);
-        }
-      `}</style>
+      {renderReportContent()}
     </div>
   );
 }
+
+export default ReportsPage;
