@@ -46,9 +46,9 @@ const HomePage = () => {
               </div>
 
               {/* Drawer Panel (Tasks + Memos) */}
-              <div className="w-[380px] flex flex-col border-l border-base-300 bg-base-100">
+              <div className="w-[380px] flex flex-col border-l border-base-300 bg-base-100 overflow-hidden">
                 {/* Tasks Header + Content */}
-                <div className="flex flex-col border-b border-base-300 min-h-0">
+                <div className={`flex flex-col border-b border-base-300 ${showMemos ? 'h-1/2' : 'h-full'} transition-all duration-200`}>
                   <div className="flex items-center justify-between px-3 py-2 font-semibold border-b border-base-300">
                     <span>Tasks</span>
                     <button onClick={toggleTasks}>
@@ -56,22 +56,22 @@ const HomePage = () => {
                     </button>
                   </div>
                   {showTasks && (
-                    <div className="flex-1 overflow-y-auto min-h-0">
+                    <div className="overflow-y-auto h-[calc(100%-40px)]">
                       <UserTasksPanel />
                     </div>
                   )}
                 </div>
 
                 {/* Memos Header + Content */}
-                <div className="flex flex-col flex-1 min-h-0">
+                <div className={`flex flex-col ${showTasks ? 'h-1/2' : 'h-full'} transition-all duration-200`}>
                   <div className="flex items-center justify-between px-3 py-2 font-semibold border-b border-base-300">
                     <span>Memos</span>
                     <button onClick={toggleMemos}>
-                      {showTasks ? <ChevronUp /> : <ChevronDown />}
+                      {showMemos ? <ChevronUp /> : <ChevronDown />}
                     </button>
                   </div>
                   {showMemos && (
-                    <div className="flex-1 overflow-y-auto min-h-0">
+                    <div className="overflow-y-auto h-[calc(100%-40px)]">
                       <UserMemosPanel />
                     </div>
                   )}
