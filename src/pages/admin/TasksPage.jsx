@@ -247,9 +247,9 @@ export default function TasksPage() {
                             onClick={setUserInfoSidebar}
                           />
                         );
-                      }) : null }
+                      }) : null}
 
-                   
+
                       {task.category && (
                         <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold border border-base-300 bg-base-100 text-base-content" title="Category">
                           {task.category}
@@ -288,8 +288,8 @@ export default function TasksPage() {
       {/* TaskModal for creating or editing a task */}
       <TaskModal
         show={showTaskModal}
-        onClose={() => { 
-          setShowTaskModal(false); 
+        onClose={() => {
+          setShowTaskModal(false);
           setModalTask(null);
           setSubmittingTask(false); // Reset loading state when modal is closed
         }}
@@ -359,7 +359,7 @@ export default function TasksPage() {
 // Redesign TaskDetailsModal for a modern, beautiful look
 function TaskDetailsModal({ task, onClose, onDelete, users, getUserById, setUserInfoSidebar }) {
   const { getTaskAuditLog, addTaskComment, getTaskComments, uploadTaskAttachment, listTaskAttachments, deleteTaskAttachment } = useTaskStore();
-  const [tab, setTab] = useState('details');
+  const [tab, setTab] = useState('comments');
   const [auditLog, setAuditLog] = useState([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [comments, setComments] = useState([]);
@@ -541,14 +541,10 @@ function TaskDetailsModal({ task, onClose, onDelete, users, getUserById, setUser
           {/* Right: Tabs (Details, Comments, Attachments, Activity) */}
           <div className="w-full md:w-80 bg-base-200 rounded-xl p-4 flex flex-col gap-2 border-l border-base-300">
             <div className="flex gap-2 border-b pb-2 mb-2">
-              <button className={`btn btn-xs ${tab === 'details' ? 'btn-primary' : ''}`} onClick={() => setTab('details')}>Details</button>
               <button className={`btn btn-xs ${tab === 'comments' ? 'btn-primary' : ''}`} onClick={() => setTab('comments')}>Comments</button>
               <button className={`btn btn-xs ${tab === 'attachments' ? 'btn-primary' : ''}`} onClick={() => setTab('attachments')}>Attachments</button>
               <button className={`btn btn-xs ${tab === 'activity' ? 'btn-primary' : ''}`} onClick={() => setTab('activity')}>Activity</button>
             </div>
-            {tab === 'details' && (
-              <div className="text-base-content/80">Task details shown on the left.</div>
-            )}
             {tab === 'comments' && (
               <div className="bg-base-100 rounded-lg p-3 shadow-inner">
                 <div className="font-semibold mb-2">Comments</div>
@@ -576,9 +572,14 @@ function TaskDetailsModal({ task, onClose, onDelete, users, getUserById, setUser
                 ) : comments.length === 0 ? (
                   <div className="text-base-content/70">No comments yet.</div>
                 ) : (
-                  <ul className="space-y-2">
+                  <ul className="space-y-2 max-h-60 overflow-y-auto">
                     {comments.map((c) => {
-                      const user = users.find(u => u._id === c.user) || {};
+                      // Fix: Correctly access the comment text using c.text instead of c.comment
+                      const commentText = c.text || c.comment || "";
+                      const user = c.user && typeof c.user === 'object'
+                        ? c.user
+                        : users.find(u => u._id === c.user) || {};
+
                       return (
                         <li key={c._id || c.id} className="border-b pb-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -586,13 +587,13 @@ function TaskDetailsModal({ task, onClose, onDelete, users, getUserById, setUser
                               <img src={user.profilePicture} alt={user.name || user.email || 'User'} className="w-6 h-6 rounded-full border border-primary" />
                             ) : (
                               <div className="w-6 h-6 rounded-full border border-primary bg-base-300 flex items-center justify-center text-xs font-bold text-primary">
-                                {(user.name || user.email || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                                {(user.name || user.email || 'U').charAt(0).toUpperCase()}
                               </div>
                             )}
                             <span className="font-semibold text-xs text-primary">{user.name || user.email || 'User'}</span>
                             <span className="text-xs text-base-content/60">{new Date(c.createdAt).toLocaleString()}</span>
                           </div>
-                          <div className="text-sm">{c.comment}</div>
+                          <div className="text-sm whitespace-pre-wrap">{commentText}</div>
                         </li>
                       );
                     })}
@@ -620,25 +621,110 @@ function TaskDetailsModal({ task, onClose, onDelete, users, getUserById, setUser
                 ) : attachments.length === 0 ? (
                   <div className="text-base-content/70">No attachments yet.</div>
                 ) : (
-                  <ul className="space-y-2">
-                    {attachments.map((a) => (
-                      <li key={a._id || a.id} className="border-b pb-1 flex items-center gap-3 justify-between">
-                        <div className="flex flex-col flex-1">
-                          <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">{a.name || a.url}</a>
-                          <div className="text-xs text-base-content/60">
-                            {a.type} • {(a.size / 1024).toFixed(1)} KB • Uploaded {a.uploadedAt ? new Date(a.uploadedAt).toLocaleString() : ''}
+                  <div className="space-y-4 max-h-72 overflow-y-auto">
+                    {attachments.map((a) => {
+                      // Determine file type for preview
+                      const isImage = a.mimetype?.startsWith('image/') ||
+                        /\.(jpg|jpeg|png|gif|webp)$/i.test(a.filename || a.name || '');
+
+                      const isPDF = a.mimetype === 'application/pdf' ||
+                        /\.pdf$/i.test(a.filename || a.name || '');
+
+                      const isVideo = a.mimetype?.startsWith('video/') ||
+                        /\.(mp4|webm|avi|mov)$/i.test(a.filename || a.name || '');
+
+                      const isAudio = a.mimetype?.startsWith('audio/') ||
+                        /\.(mp3|wav|ogg)$/i.test(a.filename || a.name || '');
+
+                      return (
+                        <div key={a._id || a.id} className="border border-base-300 rounded-lg overflow-hidden">
+                          {/* Preview based on file type */}
+                          {isImage && (
+                            <div className="w-full h-40 overflow-hidden bg-base-200">
+                              <img
+                                src={a.url}
+                                alt={a.filename || a.name || 'File'}
+                                className="w-full h-full object-contain"
+                                loading="lazy"
+                              />
+                            </div>
+                          )}
+                          {isPDF && (
+                            <div className="w-full h-40 bg-base-200 flex items-center justify-center">
+                              <iframe
+                                src={`${a.url}#view=FitH`}
+                                title={a.filename || a.name || 'PDF document'}
+                                className="w-full h-full"
+                              />
+                            </div>
+                          )}
+                          {isVideo && (
+                            <div className="w-full bg-black">
+                              <video
+                                controls
+                                className="w-full max-h-40"
+                                src={a.url}
+                              >
+                                Your browser does not support the video tag.
+                              </video>
+                            </div>
+                          )}
+
+                          {isAudio && (
+                            <div className="p-4 bg-base-200">
+                              <audio
+                                controls
+                                className="w-full"
+                                src={a.url}
+                              >
+                                Your browser does not support the audio tag.
+                              </audio>
+                            </div>
+                          )}
+
+                          {/* For other file types or if no preview available */}
+                          {!isImage && !isPDF && !isVideo && !isAudio && (
+                            <div className="p-4 bg-base-200 flex items-center justify-center h-20">
+                              <p className="text-sm text-base-content/70 text-center">
+                                Preview not available for this file type
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="p-3 bg-base-100 border-t border-base-300">
+                            <div className="flex justify-between items-center">
+                              <div className="truncate flex-1">
+                                <p className="font-medium truncate">{a.filename || a.name || 'File'}</p>
+                                <p className="text-xs text-base-content/60">
+                                  {((a.size || 0) / 1024).toFixed(1)} KB • Uploaded {a.uploadedAt ? new Date(a.uploadedAt).toLocaleString() : 'recently'}
+                                </p>
+                              </div>
+
+                              <div className="flex gap-2">
+                                <a
+                                  href={a.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn btn-xs btn-secondary"
+                                  title="Open file"
+                                >
+                                  Open
+                                </a>
+                                <button
+                                  className="btn btn-xs btn-error"
+                                  onClick={() => handleDeleteAttachment(a._id)}
+                                  disabled={uploadingAttachment}
+                                  title="Delete attachment"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <button
-                          className="btn btn-xs btn-error"
-                          onClick={() => handleDeleteAttachment(a._id)}
-                          disabled={uploadingAttachment}
-                        >
-                          Delete
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
@@ -651,12 +737,23 @@ function TaskDetailsModal({ task, onClose, onDelete, users, getUserById, setUser
                   <div className="text-base-content/70">No activity found.</div>
                 ) : (
                   <ul className="space-y-2">
-                    {auditLog.map((log) => (
-                      <li key={log._id || log.id || log.createdAt} className="border-b pb-1">
-                        <div className="text-xs text-base-content/60">{new Date(log.createdAt).toLocaleString()}</div>
-                        <div className="text-sm">{log.action} {log.comment && `- ${log.comment}`}</div>
-                      </li>
-                    ))}
+                    {auditLog.map((log, index) => {
+                      // Format date safely - handle invalid dates
+                      const formattedDate = log.timestamp || log.createdAt || log.updatedAt
+                        ? new Date(log.timestamp || log.createdAt || log.updatedAt).toLocaleString()
+                        : 'Unknown date';
+
+                      // Use a reliable key
+                      const key = log._id || log.id || `activity-${index}`;
+                      return (
+                        <li key={key} className="border-b pb-1">
+                          <div className="text-xs text-base-content/60">
+                            {formattedDate !== 'Invalid Date' ? formattedDate : 'Date not available'}
+                          </div>
+                          <div className="text-sm">{log.action} {log.details && `- ${log.details}`}</div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>
