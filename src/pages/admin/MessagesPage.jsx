@@ -121,13 +121,13 @@ export default function MessagesPage() {
                 return (
                   <div
                     key={user._id}
-                    className="flex flex-col gap-2 p-5 rounded-xl bg-base-100 border border-base-300 shadow-md transition-all duration-300 hover:shadow-2xl hover:-rotate-2 hover:scale-[1.025] hover:z-10 cursor-pointer group relative overflow-hidden"
+                    className="flex flex-col gap-2 p-5 rounded-xl bg-base-100 border border-base-300 shadow-md transition-all duration-300 hover:shadow-2xl hover:-rotate-2 hover:scale-[1.025] hover:z-10 cursor-pointer group relative"
                     style={{ background: 'linear-gradient(135deg, rgba(245,245,255,0.7) 0%, rgba(230,240,255,0.5) 100%)' }}
                   >
                     {/* Online status badge */}
                     <span className={`absolute top-4 left-4 w-3 h-3 rounded-full border-2 border-base-100 ${getUserStatusColor(status)}`} title={status}></span>
                     <div className="flex items-center gap-3 mb-1">
-                      <UserAvatar user={user} size="w-12 h-12" textSize="text-lg" showTooltip={true} />
+                      <UserAvatar user={user} size="w-12 h-12" textSize="text-lg" showTooltip={true} tooltipZIndex={100} />
                       <div className="flex flex-col flex-1">
                         <span className="font-semibold text-base-content text-lg">{user.name || user.email}</span>
                         <span className="text-xs text-base-content/60">{user.email}</span>

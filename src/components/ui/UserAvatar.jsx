@@ -9,8 +9,9 @@ import React from 'react';
  * @param {boolean} [props.showTooltip] - If true, show tooltip on hover (for cards/lists)
  * @param {function} [props.onClick] - If provided, called on click (for modals/details to open sidebar)
  * @param {boolean} [props.fallback] - If true, show fallback avatar for missing user; otherwise, render nothing
+ * @param {number} [props.tooltipZIndex] - Z-index for tooltip (default 100)
  */
-export default function UserAvatar({ user, size = 'w-8 h-8', textSize = 'text-xs', showTooltip = false, onClick, fallback = false }) {
+export default function UserAvatar({ user, size = 'w-8 h-8', textSize = 'text-xs', showTooltip = false, onClick, fallback = false, tooltipZIndex = 100 }) {
     if (!user) {
         if (fallback) {
             user = { name: 'Unknown', email: '', role: '' };
@@ -40,11 +41,11 @@ export default function UserAvatar({ user, size = 'w-8 h-8', textSize = 'text-xs
     // Tooltip wrapper (simple, no external lib)
     if (showTooltip) {
         return (
-            <span className="relative inline-block align-middle">
+            <span className="relative inline-block align-middle ">
                 <span className="group/avatar">
                     {avatar}
                     <span className="pointer-events-none absolute z-50 left-1/2 -translate-x-1/2 mt-2 opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-200"
-                        style={{ minWidth: 200 }}>
+                        style={{ minWidth: 200, zIndex: tooltipZIndex }}>
                         {tooltipContent}
                     </span>
                 </span>
