@@ -1,55 +1,79 @@
+// src/components/reports/ReportMetrics.jsx
 import React from 'react';
-import { Users, TrendingUp, DollarSign, CheckCircle } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
 import MetricCard from './MetricCard';
+import { Spin } from 'antd';
+import { Users, DollarSign, TrendingUp, Clock } from 'lucide-react';
 
 const ReportMetrics = ({ metrics, loading }) => {
   if (loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-24 bg-base-200 animate-pulse rounded-lg"></div>
-        ))}
-      </div>
+      <Card className="p-8 flex justify-center">
+        <Spin size="large" />
+      </Card>
     );
   }
 
-  const cards = [
+  if (!metrics) {
+    return (
+      <Card>
+        <CardContent>
+          <p className="text-base-content/60 text-center py-8">
+            No metrics data available. Try changing your date range.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const metricCards = [
     {
-      title: 'Team Productivity',
-      value: metrics?.productivity?.toFixed(1) || '0',
+      title: 'Total Users',
+      value: metrics.totalUsers,
       icon: <Users className="h-5 w-5" />,
-      trend: metrics?.productivityTrend || 0,
-      trendText: 'vs last period'
+      trend: metrics.userGrowth,
+      trendText: 'vs. previous period'
     },
     {
-      title: 'Client Satisfaction',
-      value: `${metrics?.satisfaction || 0}%`,
-      icon: <CheckCircle className="h-5 w-5" />,
-      trend: metrics?.satisfactionTrend || 0,
-      trendText: 'from previous'
+      title: 'Active Users',
+      value: metrics.activeUsers,
+      icon: <Users className="h-5 w-5" />,
+      trend: 0 // No trend for this metric
     },
     {
-      title: 'Revenue Growth',
-      value: `$${(metrics?.revenue || 0).toLocaleString()}`,
-      icon: <TrendingUp className="h-5 w-5" />,
-      trend: metrics?.revenueTrend || 0,
-      trendText: 'growth rate'
-    },
-    {
-      title: 'Cost Efficiency',
-      value: `${metrics?.costEfficiency || 0}%`,
+      title: 'Total Revenue',
+      value: `$${metrics.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: <DollarSign className="h-5 w-5" />,
-      trend: metrics?.costEfficiencyTrend || 0,
-      trendText: 'vs target'
+    },
+    {
+      title: 'Avg Session Duration',
+      value: `${metrics.avgSessionDuration} min`,
+      icon: <Clock className="h-5 w-5" />,
+      trend: 5.3,
+      trendText: 'increase'
     }
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-      {cards.map((card, i) => (
-        <MetricCard key={i} {...card} />
-      ))}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Key Metrics</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {metricCards.map((metric, i) => (
+            <MetricCard
+              key={i}
+              title={metric.title}
+              value={metric.value}
+              icon={metric.icon}
+              trend={metric.trend}
+              trendText={metric.trendText}
+            />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
