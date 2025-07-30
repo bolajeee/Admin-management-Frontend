@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuthStore } from '../../store/useAuthStore';
 
 export default function TaskModal({
     show,
@@ -9,15 +10,21 @@ export default function TaskModal({
     users = [],
     mode = 'create', // 'create' or 'edit'
 }) {
-    // Use assignedTo for assignees (array of user IDs)
+    // Use assignedTo as a single user ID, defaulting to the first user if available
     const [title, setTitle] = useState(initialTask.title || '');
     const [description, setDescription] = useState(initialTask.description || '');
     const [dueDate, setDueDate] = useState(initialTask.dueDate ? initialTask.dueDate.slice(0, 10) : '');
     const [priority, setPriority] = useState(initialTask.priority || 'medium');
-    // Always control status from initialTask.status
     const [status, setStatus] = useState(initialTask.status || 'todo');
     const [category, setCategory] = useState(initialTask.category || '');
-    const [assignedTo, setAssignedTo] = useState(initialTask.assignedTo || []);
+    // Handle both array and single value for assignedTo
+    const initialAssignedTo = Array.isArray(initialTask.assignedTo) ?
+        (initialTask.assignedTo[0] || '') :
+        (initialTask.assignedTo || '');
+    const [assignedTo, setAssignedTo] = useState(initialAssignedTo);
+    // createdBy should be the current user's ID for new tasks
+    const { authUser } = useAuthStore();
+    const [createdBy, setCreatedBy] = useState(initialTask.createdBy || (authUser?._id || ''));
     const [recurrence, setRecurrence] = useState(initialTask.recurrence?.frequency || 'none');
     const [expandedUser, setExpandedUser] = useState(null); // For expanding user info
 
@@ -29,7 +36,12 @@ export default function TaskModal({
             setPriority(initialTask.priority || 'medium');
             setStatus(initialTask.status || 'todo'); // Always reset status from initialTask
             setCategory(initialTask.category || '');
-            setAssignedTo(initialTask.assignedTo || []);
+            // Handle both array and single value for assignedTo
+            const initialAssignedTo = Array.isArray(initialTask.assignedTo) ?
+                (initialTask.assignedTo[0] || '') :
+                (initialTask.assignedTo || '');
+            setAssignedTo(initialAssignedTo);
+            setCreatedBy(initialTask.createdBy || (authUser?._id || ''));
             setRecurrence(initialTask.recurrence?.frequency || 'none');
             setExpandedUser(null);
         }
@@ -37,23 +49,43 @@ export default function TaskModal({
 
     if (!show) return null;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        onSubmit({
-            title,
-            description,
-            dueDate: dueDate ? new Date(dueDate) : null,
-            priority,
-            status, // Ensure status is always submitted
-            category,
-            assignedTo, // Use assignedTo for backend compatibility
-            recurrence: { frequency: recurrence },
-        });
+        if (!createdBy) {
+            console.error('Cannot create task: createdBy is required');
+            alert('Error: Could not determine task creator. Please try again.');
+            return;
+        }
+
+        // Ensure assignedTo is properly formatted as an array of strings
+        const assignedToArray = Array.isArray(assignedTo) ? assignedTo.filter(Boolean) : [];
+
+
+        const taskData = {
+            title: title.trim(),
+            description: description.trim(),
+            dueDate: dueDate || undefined, // Let backend handle date parsing
+            priority: priority || 'medium',
+            status: status || 'to do', // Ensure status matches backend enum
+            category: category || undefined,
+            assignedTo: assignedToArray.filter(Boolean), // Ensure array of strings and filter out any empty values
+            recurrence: recurrence && recurrence !== 'none' ? { frequency: recurrence } : undefined
+        };
+
+        console.log('Submitting task data:', taskData);
+        try {
+            await onSubmit(taskData);
+            // If onSubmit is successful, close the modal
+            onClose();
+        } catch (error) {
+            console.error('Error submitting task:', error);
+            // The error handling is done in the parent component
+        }
     };
 
     const handleAssigneeChange = (e) => {
-        const value = Array.from(e.target.selectedOptions, option => option.value);
-        setAssignedTo(value);
+        const value = e.target.value;
+        setAssignedTo(prev => [...new Set([...prev, value])]);
     };
 
     // Helper to get user object by ID

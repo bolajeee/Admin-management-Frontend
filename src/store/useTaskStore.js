@@ -14,7 +14,7 @@ export const useTaskStore = create((set, get) => ({
     getTasks: async (filters = {}) => {
         set({ isTasksLoading: true });
         try {
-            const res = await axiosInstance.get('/tasks', { params: filters });
+            const res = await axiosInstance.get('/tasks/getTasks', { params: filters });
             // Normalize _id for all tasks
             set({ tasks: res.data.map(t => ({ ...t, _id: t._id || t.id })) });
         } catch (error) {
@@ -29,7 +29,7 @@ export const useTaskStore = create((set, get) => ({
     getUserTasks: async (userId) => {
         set({ isUserTasksLoading: true });
         try {
-            const res = await axiosInstance.get(`/tasks/userTasks/${userId}`);
+            const res = await axiosInstance.get(`/tasks/getUserTasks/${userId}`);
             // Normalize _id for all user tasks
             set({ userTasks: res.data.map(t => ({ ...t, _id: t._id || t.id })) });
             toast.success("User tasks fetched successfully");
@@ -45,12 +45,28 @@ export const useTaskStore = create((set, get) => ({
     createTask: async (taskData) => {
         set(state => ({ taskActionLoading: { ...state.taskActionLoading, create: true } }));
         try {
+            console.log('Creating task with data:', taskData);
             const res = await axiosInstance.post('/tasks', taskData);
+            
             // Normalize _id for the new task
-            set(state => ({ tasks: [{ ...res.data, _id: res.data._id || res.data.id }, ...state.tasks] }));
-            toast.success("Task created");
+            const newTask = { ...res.data, _id: res.data._id || res.data.id };
+            set(state => ({ 
+                tasks: [newTask, ...state.tasks],
+                userTasks: [newTask, ...state.userTasks] 
+            }));
+            toast.success("Task created successfully");
+            return newTask;
         } catch (error) {
-            toast.error("Error creating task");
+            console.error('Error creating task:', error);
+            const errorMessage = error.response?.data?.message || 'Failed to create task';
+            const errors = error.response?.data?.errors;
+            
+            if (errors?.length) {
+                errors.forEach(msg => toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg)));
+            } else {
+                toast.error(errorMessage);
+            }
+            throw error;
         } finally {
             set(state => ({ taskActionLoading: { ...state.taskActionLoading, create: false } }));
         }

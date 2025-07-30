@@ -66,22 +66,35 @@ export default function TasksPage() {
   };
 
   const handleCreateTask = async (taskData) => {
-    setSubmittingTask(true);
-    await createTask(taskData);
-    setSubmittingTask(false);
-    setShowTaskModal(false);
-    getTasks(filters);
+    try {
+      setSubmittingTask(true);
+      await createTask(taskData);
+      // Don't close the modal here - let the TaskModal handle it on success
+      await getTasks(filters);
+    } catch (error) {
+      console.error('Error creating task:', error);
+      // Re-throw the error so TaskModal can handle it
+      throw error;
+    } finally {
+      setSubmittingTask(false);
+    }
   };
 
   const handleEditTask = async (taskData) => {
     if (!modalTask) return;
-    setSubmittingTask(true);
-    await updateTask(modalTask._id, taskData);
-    setSubmittingTask(false);
-    setShowTaskModal(false);
-    setModalTask(null);
-    setSelectedTask(null); // Close details modal if open
-    getTasks(filters);
+    try {
+      setSubmittingTask(true);
+      await updateTask(modalTask._id, taskData);
+      // Don't close the modal here - let the TaskModal handle it on success
+      await getTasks(filters);
+      setSelectedTask(null); // Close details modal if open
+    } catch (error) {
+      console.error('Error updating task:', error);
+      // Re-throw the error so TaskModal can handle it
+      throw error;
+    } finally {
+      setSubmittingTask(false);
+    }
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -219,7 +232,7 @@ export default function TasksPage() {
                   <div className="flex items-center justify-between px-4 pb-4 mt-auto">
                     <div className="flex items-center gap-1">
                       {/* Assigned user avatars */}
-                      {(task.assignedTo || []).map(uid => {
+                      {Array.isArray(task.assignedTo) ? task.assignedTo.map(uid => {
                         // If uid is an object, extract its _id or id property
                         const userId = typeof uid === 'object' ? uid._id || uid.id || JSON.stringify(uid) : uid;
                         const user = getUserById(userId);
@@ -234,7 +247,9 @@ export default function TasksPage() {
                             onClick={setUserInfoSidebar}
                           />
                         );
-                      })}
+                      }) : null }
+
+                   
                       {task.category && (
                         <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold border border-base-300 bg-base-100 text-base-content" title="Category">
                           {task.category}
@@ -273,13 +288,16 @@ export default function TasksPage() {
       {/* TaskModal for creating or editing a task */}
       <TaskModal
         show={showTaskModal}
-        onClose={() => { setShowTaskModal(false); setModalTask(null); }}
-        onSubmit={modalMode === 'edit' ? handleEditTask : handleCreateTask}
+        onClose={() => { 
+          setShowTaskModal(false); 
+          setModalTask(null);
+          setSubmittingTask(false); // Reset loading state when modal is closed
+        }}
+        onSubmit={modalMode === 'create' ? handleCreateTask : handleEditTask}
         submitting={submittingTask}
+        initialTask={modalTask || {}}
         users={users}
         mode={modalMode}
-        // Convert assignees to assignedTo for the modal
-        initialTask={modalTask ? { ...modalTask, assignedTo: modalTask.assignedTo || modalTask.assignees || [] } : {}}
       />
       {/* User Info Sidebar (right-aligned) */}
       {userInfoSidebar && (
