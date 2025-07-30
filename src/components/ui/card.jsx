@@ -3,8 +3,13 @@ import { useThemeStore } from '../../store/useThemeStore';
 
 export function Card({ children, className = "", ...props }) {
     const { theme } = useThemeStore();
+    
+    // Use DaisyUI theme variables instead of hardcoded colors
     return (
-        <div className={`rounded-lg shadow p-6 ${theme === 'dark' ? 'bg-base-200' : 'bg-white'} ${className}`} data-theme={theme} {...props}>
+        <div 
+            className={`rounded-lg shadow p-6 bg-base-100 ${className}`} 
+            {...props}
+        >
             {children}
         </div>
     );

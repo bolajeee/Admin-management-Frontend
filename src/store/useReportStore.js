@@ -6,7 +6,6 @@ import toast from 'react-hot-toast';
 export const useReportStore = create((set, get) => ({
   // State
   uploadedReports: [],
-  reportCategories: [], // New array to track available categories
   selectedReport: null,
   reportData: null,
   isLoading: false,
@@ -18,31 +17,13 @@ export const useReportStore = create((set, get) => ({
     try {
       const reports = await reportService.getUploadedReports();
       
-      // Extract categories from reports
-      const categories = [...new Set(reports.map(report => report.type))];
-      
       set({ 
         uploadedReports: reports, 
-        reportCategories: categories,
         error: null 
       });
       
       return reports;
-/*************  ✨ Windsurf Command ⭐  *************/
-/**
- * Uploads a report file to the server.
- * 
- * @param {File} file - The file to be uploaded.
- * @param {string} reportName - The name of the report.
- * @param {string} reportType - The type of the report.
- * @param {function} onProgress - Callback function to track upload progress.
- * 
- * @returns {Promise<Object>} The server response after uploading the report.
- * 
- * @throws Will throw an error if the upload fails.
- */
-
-/*******  04a5c2ef-eb9e-47c8-8204-7c9e68b33d38  *******/    } catch (error) {
+    } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to fetch reports';
       set({ error: errorMessage });
       toast.error(errorMessage);
