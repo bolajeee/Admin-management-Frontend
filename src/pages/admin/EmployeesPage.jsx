@@ -19,6 +19,7 @@ export default function EmployeesPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', role: 'employee' });
+  const [addLoading, setAddLoading] = useState(false);
 
   useEffect(() => {
     async function fetchUsers() {
@@ -35,8 +36,8 @@ export default function EmployeesPage() {
     fetchUsers();
   }, []);
 
-  const handleDeleteUser = async (userId) => {
-    if (window.confirm('Are you sure you want to remove this user?')) {
+  const handleDeleteUser = async (userId, userName) => {
+    if (window.confirm(`Are you sure you want to remove ${userName}?`)) {
       try {
         await deleteUser(userId);
         const res = await axiosInstance.get('/messages/users');
@@ -49,13 +50,19 @@ export default function EmployeesPage() {
 
   const handleAddUser = async (e) => {
     e.preventDefault();
+    setAddLoading(true);
     try {
       const res = await axiosInstance.post('/auth/create', newUser); // 🔁 adjust route as needed
-      setUsers((prev) => [...prev, res.data]);
+      setUsers((prev) => [...prev, res.data.user]);
       setShowModal(false);
       setNewUser({ name: '', email: '', role: 'employee' });
+      // Show default password info
+      const defaultPassword = newUser.role === 'admin' ? 'admin' : 'employee';
+      alert(`User created! Default password: '${defaultPassword}'. They should change it after first login.`);
     } catch {
       alert("Failed to add user.");
+    } finally {
+      setAddLoading(false);
     }
   };
 
@@ -91,7 +98,7 @@ export default function EmployeesPage() {
                     <CardTitle className="text-base font-semibold">
                       {user.name || user.email}
                     </CardTitle>
-                    <span className={`text-xs px-2 py-1 rounded ${user.role === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`text-xs px-2 py-1 rounded ${user.role === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
                       {user.role}
                     </span>
                   </div>
@@ -99,7 +106,7 @@ export default function EmployeesPage() {
                 <button
                   className="text-red-500 hover:text-red-700"
                   title="Remove"
-                  onClick={() => handleDeleteUser(user._id)}
+                  onClick={() => handleDeleteUser(user._id, user.name)}
                 >
                   <Trash2 className="h-5 w-5" />
                 </button>
@@ -124,24 +131,37 @@ export default function EmployeesPage() {
 
       {/* === Modal === */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-lg">
+        <div data-theme={theme} className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-base-100 text-base-content p-6 rounded-lg w-full max-w-md shadow-lg relative">
+            {/* Close (X) button */}
+            <button
+              type="button"
+              className="absolute top-3 right-3 text-base-content hover:text-error focus:outline-none"
+              aria-label="Close modal"
+              onClick={() => setShowModal(false)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
             <h2 className="text-xl font-semibold mb-4">Add New User</h2>
             <form onSubmit={handleAddUser} className="space-y-4">
-            <div>
-                <label className="block text-sm font-medium mb-1">Full Name</label>
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="name">Full Name</label>
                 <input
-                  type="name"
+                  id="name"
+                  type="text"
                   required
                   value={newUser.name}
                   onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                   className="input input-bordered w-full"
-                  placeholder="Enter user email"
+                  placeholder="Enter user name"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
+                <label className="block text-sm font-medium mb-1" htmlFor="email">Email</label>
                 <input
+                  id="email"
                   type="email"
                   required
                   value={newUser.email}
@@ -151,8 +171,9 @@ export default function EmployeesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Role</label>
+                <label className="block text-sm font-medium mb-1" htmlFor="role">Role</label>
                 <select
+                  id="role"
                   value={newUser.role}
                   onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                   className="select select-bordered w-full"
@@ -161,16 +182,20 @@ export default function EmployeesPage() {
                   <option value="admin">Admin</option>
                 </select>
               </div>
+              <div className="text-xs text-gray-500 bg-gray-100 rounded p-2">
+                A default password will be set for the new user: <b>'admin'</b> for admins, <b>'employee'</b> for employees. They should change it after first login.
+              </div>
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   className="btn btn-ghost"
                   onClick={() => setShowModal(false)}
+                  disabled={addLoading}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Add User
+                <button type="submit" className="btn btn-primary" disabled={addLoading}>
+                  {addLoading ? 'Adding...' : 'Add User'}
                 </button>
               </div>
             </form>
