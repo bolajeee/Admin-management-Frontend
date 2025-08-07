@@ -1,8 +1,8 @@
-// components/dashboard/QuickActions.tsx
+// src/components/dashboard/QuickActions.jsx
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 
-const QuickActions = ({ actions, loading, onAddUser, onSendMemo, navigate }) => {
+const QuickActions = ({ actions, loading, onAddUser, onSendMemo, onCreateTask, navigate }) => {
   return (
     <Card>
       <CardHeader>
@@ -21,10 +21,21 @@ const QuickActions = ({ actions, loading, onAddUser, onSendMemo, navigate }) => 
                 className="w-full text-left p-3 rounded-lg hover:bg-primary/10 transition-colors text-base-content"
                 onClick={() => {
                   const label = action.label?.toLowerCase();
-                  if (label?.includes('memo')) onSendMemo();
-                  else if (label?.includes('add employee')) onAddUser();
-                  else if (action.route) navigate(action.route);
-                  else if (typeof action.onClick === 'function') action.onClick();
+                  if (label?.includes('memo')) {
+                    onSendMemo();
+                  } 
+                  else if (label?.includes('add employee')) {
+                    onAddUser();
+                  }
+                  else if (label?.includes('task') || label?.includes('create task')) {
+                    onCreateTask();
+                  }
+                  else if (action.route) {
+                    navigate(action.route);
+                  }
+                  else if (typeof action.onClick === 'function') {
+                    action.onClick();
+                  }
                 }}
               >
                 {action.label}
