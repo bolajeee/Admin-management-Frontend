@@ -10,20 +10,45 @@ import {
   CheckSquare,
   BarChart2,
   Menu,
-  X
+  X,
+  ChevronRight,
+  Home,
+  UserCog,
+  FileText,
+  Activity
 } from 'lucide-react';
 import { useAdminLayout } from '../../hooks/useAdminLayout';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useThemeStore } from '../../store/useThemeStore';
 
 const adminNavItems = [
-  { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard className="h-5 w-5" /> },
-  { name: 'Employees', path: '/admin/employees', icon: <Users className="h-5 w-5" /> },
-  { name: 'Messages', path: '/admin/messages', icon: <MessageSquare className="h-5 w-5" /> },
-  { name: 'Memos', path: '/admin/memos', icon: <Bell className="h-5 w-5" /> },
-  { name: 'Tasks', path: '/admin/tasks', icon: <CheckSquare className="h-5 w-5" /> },
-  { name: 'Reports', path: '/admin/reports', icon: <BarChart2 className="h-5 w-5" /> },
-  { name: 'Settings', path: '/admin/settings', icon: <Settings className="h-5 w-5" /> },
+  {
+    section: 'Main',
+    items: [
+      { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard className="h-5 w-5" />, description: 'Overview & Analytics' },
+    ]
+  },
+  {
+    section: 'Management',
+    items: [
+      { name: 'Employees', path: '/admin/employees', icon: <Users className="h-5 w-5" />, description: 'User Management' },
+      { name: 'Messages', path: '/admin/messages', icon: <MessageSquare className="h-5 w-5" />, description: 'Communication' },
+      { name: 'Memos', path: '/admin/memos', icon: <Bell className="h-5 w-5" />, description: 'Announcements' },
+      { name: 'Tasks', path: '/admin/tasks', icon: <CheckSquare className="h-5 w-5" />, description: 'Task Management' },
+    ]
+  },
+  {
+    section: 'Analytics',
+    items: [
+      { name: 'Reports', path: '/admin/reports', icon: <BarChart2 className="h-5 w-5" />, description: 'Data & Reports' },
+    ]
+  },
+  {
+    section: 'System',
+    items: [
+      { name: 'Settings', path: '/admin/settings', icon: <Settings className="h-5 w-5" />, description: 'System Configuration' },
+    ]
+  }
 ];
 
 export default function AdminLayout() {
@@ -42,81 +67,137 @@ export default function AdminLayout() {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Enhanced Sidebar */}
       <div
-        className={`z-50 w-64 transform bg-base-200 border-r border-base-300 shadow-lg transition-transform duration-300 ease-in-out 
-          fixed top-16 inset-y-0 left-0 
+        className={`z-50 w-72 transform bg-base-200 border-r border-base-300 shadow-lg transition-transform duration-300 ease-in-out 
+          fixed top-0 inset-y-0 left-0 
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
       >
         <div className="flex h-full flex-col">
-          <div className="flex h-16 items-center justify-between border-b border-base-300 px-4 md:justify-center bg-base-100">
-            <h1 className="text-xl font-bold text-primary tracking-wide">Admin Panel</h1>
+          {/* Header */}
+          <div className="flex h-16 items-center justify-between border-b border-base-300 px-6 bg-base-100">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <UserCog className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-primary">Admin Panel</h1>
+                <p className="text-xs text-base-content/60">Management Console</p>
+              </div>
+            </div>
             <button
               onClick={toggleMobileMenu}
-              className="rounded-md p-1 text-base-content/60 hover:bg-base-300 md:hidden"
+              className="rounded-md p-2 text-base-content/60 hover:bg-base-300 md:hidden transition-colors"
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="flex-1 flex flex-col p-4 overflow-y-auto">
-            <nav className="space-y-1">
-              {adminNavItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  className={`flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${location.pathname === item.path
-                    ? 'bg-primary/10 text-primary shadow-sm scale-[1.03]'
-                    : 'text-base-content hover:bg-primary/5 hover:text-primary'
-                    }`}
-                  onClick={closeMobileMenu}
-                >
-                  <span className="mr-3">{item.icon}</span>
-                  {item.name}
-                </Link>
+          {/* Navigation */}
+          <div className="flex-1 flex flex-col overflow-y-auto">
+            <nav className="flex-1 px-4 py-6 space-y-6">
+              {adminNavItems.map((section) => (
+                <div key={section.section}>
+                  <h3 className="text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-3 px-2">
+                    {section.section}
+                  </h3>
+                  <div className="space-y-1">
+                    {section.items.map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.path}
+                        className={`group flex items-center rounded-lg px-3 py-3 text-sm font-medium transition-all duration-200 relative ${location.pathname === item.path
+                            ? 'bg-primary/10 text-primary shadow-sm border-l-4 border-primary'
+                            : 'text-base-content hover:bg-base-300 hover:text-primary'
+                          }`}
+                        onClick={closeMobileMenu}
+                      >
+                        <span className="mr-3 group-hover:scale-110 transition-transform">
+                          {item.icon}
+                        </span>
+                        <div className="flex-1">
+                          <div className="font-medium">{item.name}</div>
+                          <div className="text-xs text-base-content/60 group-hover:text-base-content/80">
+                            {item.description}
+                          </div>
+                        </div>
+                        {location.pathname === item.path && (
+                          <ChevronRight className="h-4 w-4 text-primary" />
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               ))}
             </nav>
 
-            <div className="border-t border-base-300 pt-4 mt-auto">
+            {/* Footer */}
+            <div className="border-t border-base-300 p-4">
               <button
                 onClick={logout}
-                className="flex items-center rounded-lg px-4 py-3 text-sm font-medium text-error transition-colors hover:bg-error/10 hover:scale-[1.03]"
+                className="flex items-center w-full rounded-lg px-3 py-3 text-sm font-medium text-error transition-all duration-200 hover:bg-error/10 hover:scale-[1.02] group"
               >
-                <LogOut className="mr-3 h-5 w-5" />
-                Logout
+                <LogOut className="mr-3 h-5 w-5 group-hover:rotate-12 transition-transform" />
+                <div>
+                  <div className="font-medium">Logout</div>
+                  <div className="text-xs text-error/60">Sign out of admin panel</div>
+                </div>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile Toggle Icon */}
+      {/* Mobile Toggle Button */}
       {!mobileMenuOpen && (
-  <button
-    onClick={toggleMobileMenu}
-    className="fixed top-20 left-4 z-50 p-2 rounded-md shadow-md bg-primary text-white md:hidden"
-  >
-    <Menu className="w-5 h-5" />
-  </button>
-)}
-
+        <button
+          onClick={toggleMobileMenu}
+          className="fixed top-4 left-4 z-50 p-3 rounded-lg shadow-lg bg-primary text-white md:hidden hover:bg-primary/90 transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      )}
 
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col h-screen md:ml-64">
-        <header className="h-16 flex items-center justify-between px-4 border-b border-base-300 bg-base-100/80 backdrop-blur z-30 shadow-sm">
-          <h1 className="text-lg font-semibold text-primary">
-            {adminNavItems.find(item => location.pathname === item.path)?.name || 'Admin'}
-          </h1>
-          <button
-            onClick={toggleMobileMenu}
-            className="rounded-md p-2 text-base-content/60 hover:bg-base-300 md:hidden"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
+      <div className="flex flex-1 flex-col h-screen md:ml-72">
+        {/* Enhanced Header */}
+        <header className="h-16 flex items-center justify-between px-6 border-b border-base-300 bg-base-100/80 backdrop-blur z-30 shadow-sm">
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-semibold text-primary">
+              {adminNavItems.flatMap(section => section.items).find(item => location.pathname === item.path)?.name || 'Admin'}
+            </h1>
+            <div className="hidden md:flex items-center gap-2 text-sm text-base-content/60">
+              <Home className="h-4 w-4" />
+              <span>/</span>
+              <span>Admin</span>
+              {location.pathname !== '/admin' && (
+                <>
+                  <span>/</span>
+                  <span className="text-primary">
+                    {adminNavItems.flatMap(section => section.items).find(item => location.pathname === item.path)?.name}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2 text-sm text-base-content/60">
+              <Activity className="h-4 w-4" />
+              <span>Admin Console</span>
+            </div>
+            <button
+              onClick={toggleMobileMenu}
+              className="rounded-lg p-2 text-base-content/60 hover:bg-base-300 md:hidden transition-colors"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-base-100">
-          <div className="mx-auto max-w-7xl">
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto bg-base-100">
+          <div className="p-6">
             <Outlet />
           </div>
         </main>
