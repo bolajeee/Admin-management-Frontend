@@ -107,8 +107,8 @@ export default function AdminLayout() {
                         key={item.name}
                         to={item.path}
                         className={`group flex items-center rounded-lg px-3 py-3 text-sm font-medium transition-all duration-200 relative ${location.pathname === item.path
-                            ? 'bg-primary/10 text-primary shadow-sm border-l-4 border-primary'
-                            : 'text-base-content hover:bg-base-300 hover:text-primary'
+                          ? 'bg-primary/10 text-primary shadow-sm border-l-4 border-primary'
+                          : 'text-base-content hover:bg-base-300 hover:text-primary'
                           }`}
                         onClick={closeMobileMenu}
                       >

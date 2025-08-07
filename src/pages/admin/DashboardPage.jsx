@@ -10,6 +10,7 @@ import { useTaskStore } from '../../store/useTaskStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useChatStore } from '../../store/useChatStore'; // To get users list
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { Clock, User, CheckSquare, Bell, MessageSquare } from 'lucide-react';
 
 function DashboardPage() {
   const [stats, setStats] = useState({
@@ -37,6 +38,10 @@ function DashboardPage() {
   const [memosReadData, setMemosReadData] = useState([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
+  // Recent Activity state
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [recentActivityLoading, setRecentActivityLoading] = useState(true);
+
   // Navigation
   const navigate = useNavigate();
 
@@ -54,6 +59,7 @@ function DashboardPage() {
       getUsers(); // Fetch users if not already loaded
     }
     fetchAnalytics();
+    fetchRecentActivity();
   }, []);
 
   const fetchDashboardStats = async () => {
@@ -114,6 +120,18 @@ function DashboardPage() {
     }
   };
 
+  const fetchRecentActivity = async () => {
+    setRecentActivityLoading(true);
+    try {
+      const res = await axiosInstance.get('/dashboard/recent-activity');
+      setRecentActivity(res.data.data || []);
+    } catch (err) {
+      setRecentActivity([]);
+    } finally {
+      setRecentActivityLoading(false);
+    }
+  };
+
   const handleAddUser = () => {
     navigate('/admin/employees');
   };
@@ -171,73 +189,169 @@ function DashboardPage() {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+    <div className="p-4 md:p-6 space-y-6">
+      <h1 className="text-2xl font-bold">Dashboard</h1>
 
       {/* Dashboard Stats */}
       <DashboardStats stats={stats} loading={loading} />
 
-      {/* Main Content Area */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Quick Actions */}
-        <QuickActions
-          actions={actions}
-          loading={loadingActions}
-          onAddUser={handleAddUser}
-          onSendMemo={handleSendMemo}
-          onCreateTask={handleCreateTask}
-          navigate={navigate}
-        />
-        {/* Analytics Charts */}
-        <div className="bg-base-100 rounded-lg p-4 shadow flex flex-col gap-6">
-          <h2 className="text-lg font-semibold mb-3">Analytics</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Tasks Completed Chart */}
-            <div>
-              <h3 className="text-base font-medium mb-2">Tasks Completed (Last 30 Days)</h3>
-              <div className="min-h-[200px]">
-                {analyticsLoading ? (
-                  <div className="flex items-center justify-center h-full animate-pulse text-base-content/60">Loading...</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={tasksCompletedData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
+      {/* Analytics Charts - Full Width */}
+      <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow">
+        <h2 className="text-xl font-semibold mb-6">Analytics Overview</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Tasks Completed Chart */}
+          <div className="bg-base-200 rounded-lg p-4">
+            <h3 className="text-lg font-medium mb-4">Tasks Completed (Last 30 Days)</h3>
+            <div className="h-80">
+              {analyticsLoading ? (
+                <div className="flex items-center justify-center h-full animate-pulse text-base-content/60">
+                  <div className="text-center">
+                    <div className="loading loading-spinner loading-lg mb-2"></div>
+                    <p>Loading analytics...</p>
+                  </div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={tasksCompletedData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                      tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1F2937',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#F9FAFB'
+                      }}
+                      labelFormatter={(value) => new Date(value).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="count"
+                      stroke="#6366f1"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: '#6366f1' }}
+                      activeDot={{ r: 6, stroke: '#6366f1', strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
-            {/* Memos Read Chart */}
-            <div>
-              <h3 className="text-base font-medium mb-2">Memos Read (Last 30 Days)</h3>
-              <div className="min-h-[200px]">
-                {analyticsLoading ? (
-                  <div className="flex items-center justify-center h-full animate-pulse text-base-content/60">Loading...</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={memosReadData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="count" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
+          </div>
+
+          {/* Memos Read Chart */}
+          <div className="bg-base-200 rounded-lg p-4">
+            <h3 className="text-lg font-medium mb-4">Memos Read (Last 30 Days)</h3>
+            <div className="h-80">
+              {analyticsLoading ? (
+                <div className="flex items-center justify-center h-full animate-pulse text-base-content/60">
+                  <div className="text-center">
+                    <div className="loading loading-spinner loading-lg mb-2"></div>
+                    <p>Loading analytics...</p>
+                  </div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={memosReadData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                      tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1F2937',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#F9FAFB'
+                      }}
+                      labelFormatter={(value) => new Date(value).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="count"
+                      stroke="#10b981"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: '#10b981' }}
+                      activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Quick Actions and Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Quick Actions */}
+        <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow">
+          <QuickActions
+            actions={actions}
+            loading={loadingActions}
+            onAddUser={handleAddUser}
+            onSendMemo={handleSendMemo}
+            onCreateTask={handleCreateTask}
+            navigate={navigate}
+          />
+        </div>
+
         {/* Recent Activity */}
-        <div className="bg-base-100 rounded-lg p-4 shadow">
-          <h2 className="text-lg font-semibold mb-3">Recent Activity</h2>
-          <div className="text-base-content/60 text-sm">
-            Your recent activity will appear here.
-          </div>
+        <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow">
+          <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+          {recentActivityLoading ? (
+            <div className="flex items-center justify-center h-32 animate-pulse text-base-content/60">
+              <div className="loading loading-spinner loading-lg mr-2"></div>
+              Loading recent activity...
+            </div>
+          ) : recentActivity.length === 0 ? (
+            <div className="text-base-content/60 text-sm">No recent activity.</div>
+          ) : (
+            <ul className="space-y-4 max-h-80 overflow-y-auto pr-2">
+              {recentActivity.map((item, idx) => {
+                let Icon = Clock;
+                let iconColor = 'text-base-content/60';
+                if (item.type === 'user') { Icon = User; iconColor = 'text-primary'; }
+                if (item.type === 'task') { Icon = CheckSquare; iconColor = 'text-blue-500'; }
+                if (item.type === 'memo') { Icon = Bell; iconColor = 'text-yellow-500'; }
+                if (item.type === 'message') { Icon = MessageSquare; iconColor = 'text-green-500'; }
+                return (
+                  <li key={idx} className="flex items-start gap-3">
+                    <span className={`rounded-full bg-base-200 p-2 ${iconColor}`}><Icon className="h-5 w-5" /></span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-base-content font-medium truncate">{item.description}</div>
+                      <div className="text-xs text-base-content/60 mt-0.5">
+                        {new Date(item.timestamp).toLocaleString()}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       </div>
 
