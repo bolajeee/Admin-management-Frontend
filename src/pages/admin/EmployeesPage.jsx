@@ -9,7 +9,7 @@ import {
 import { useThemeStore } from '../../store/useThemeStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
-import { Tabs, Tab } from '@headlessui/react';
+import { Tab } from '@headlessui/react';
 
 export default function EmployeesPage() {
   const { theme } = useThemeStore();
