@@ -50,9 +50,26 @@ export default function EmployeesPage() {
       setLoading(true);
       try {
         const res = await axiosInstance.get('/messages/users');
-        setUsers(res.data);
+        // Ensure we have an array of users
+        const usersData = Array.isArray(res.data) ? res.data : 
+                         Array.isArray(res.data.data) ? res.data.data : 
+                         Array.isArray(res.data.users) ? res.data.users : [];
+                         
+        // Normalize the user data
+        const normalizedUsers = usersData.map(user => ({
+          _id: user._id || user.id,
+          name: user.name || '',
+          email: user.email || '',
+          role: user.role || 'employee',
+          profilePicture: user.profilePicture || user.profilePic || '/avatar.png',
+          lastSeen: user.lastSeen || null
+        }));
+
+        setUsers(normalizedUsers);
       } catch (err) {
+        console.error('Error fetching users:', err);
         setError('Failed to load users');
+        setUsers([]); // Ensure users is always an array
       } finally {
         setLoading(false);
       }
@@ -91,11 +108,11 @@ export default function EmployeesPage() {
     }
   };
 
-  // Filter users by search
-  const filteredUsers = users.filter(user =>
-    (user.name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (user.email || '').toLowerCase().includes(search.toLowerCase())
-  );
+  // Filter users by search with safety checks
+  const filteredUsers = Array.isArray(users) ? users.filter(user =>
+    ((user?.name || '').toLowerCase().includes(search.toLowerCase()) ||
+     (user?.email || '').toLowerCase().includes(search.toLowerCase()))
+  ) : [];
 
   // Fetch user details for modal
   const fetchUserDetails = async (user, tab) => {
