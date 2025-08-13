@@ -29,8 +29,11 @@ const Sidebar = () => {
   // Show skeleton loader while users are loading
   if (isUserLoading) return <SidebarSkeleton />;
 
+  // Ensure users is an array
+  const usersList = Array.isArray(users) ? users : [];
+
   // Show message if no users found
-  if (!users || users.length === 0) {
+  if (usersList.length === 0) {
     return (
       <aside className="h-full w-20 lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
         {/* Sidebar header */}
@@ -60,7 +63,7 @@ const Sidebar = () => {
       </div>
       {/* User list */}
       <div className="overflow-y-auto w-full py-3">
-        {users.map((user) => (
+        {usersList.map((user) => (
           <button
             key={user._id}
             onClick={() => setSelectedUser(user)}

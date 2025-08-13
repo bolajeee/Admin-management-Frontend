@@ -14,12 +14,16 @@ export const useTaskStore = create((set, get) => ({
     getTasks: async (filters = {}) => {
         set({ isTasksLoading: true });
         try {
-            const res = await axiosInstance.get('/tasks/getTasks', { params: filters });
+            const res = await axiosInstance.get('/tasks', { params: filters });
+            const tasks = Array.isArray(res.data) ? res.data : 
+                         Array.isArray(res.data.data) ? res.data.data : [];
             // Normalize _id for all tasks
-            set({ tasks: res.data.map(t => ({ ...t, _id: t._id || t.id })) });
+            set({ tasks: tasks.map(t => ({ ...t, _id: t._id || t.id })) });
         } catch (error) {
-            set({ taskError: error });
-            toast.error("Error fetching tasks");
+            console.error('Error fetching tasks:', error);
+            console.log('Error response:', error.response?.data);
+            set({ taskError: error, tasks: [] });
+            toast.error(error.response?.data?.message || "Error fetching tasks");
         } finally {
             set({ isTasksLoading: false });
         }
@@ -58,12 +62,19 @@ export const useTaskStore = create((set, get) => ({
             return newTask;
         } catch (error) {
             console.error('Error creating task:', error);
+            console.log('Task creation response:', error.response?.data);
+            
             const errorMessage = error.response?.data?.message || 'Failed to create task';
             const errors = error.response?.data?.errors;
             
             if (errors?.length) {
-                errors.forEach(msg => toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg)));
+                errors.forEach(msg => {
+                    const errorMsg = typeof msg === 'string' ? msg : JSON.stringify(msg);
+                    console.log('Validation error:', errorMsg);
+                    toast.error(errorMsg);
+                });
             } else {
+                console.log('Error message:', errorMessage);
                 toast.error(errorMessage);
             }
             throw error;
@@ -74,14 +85,54 @@ export const useTaskStore = create((set, get) => ({
 
     // Update a task
     updateTask: async (taskId, updates) => {
+        if (!taskId) {
+            console.error('updateTask called without taskId');
+            toast.error('Invalid task ID');
+            return;
+        }
+
         set(state => ({ taskActionLoading: { ...state.taskActionLoading, [taskId]: true } }));
         try {
+            console.log('Updating task:', taskId, 'with updates:', updates);
             const res = await axiosInstance.patch(`/tasks/${taskId}`, updates);
-            // Normalize _id for the updated task
-            set(state => ({ tasks: state.tasks.map(t => (t._id === taskId ? { ...res.data, _id: res.data._id || res.data.id } : t)) }));
-            toast.success("Task updated");
+            
+            // Ensure we have valid response data
+            if (!res.data) {
+                throw new Error('No data received from server');
+            }
+
+            // Normalize _id and create updated task object
+            const updatedTask = { 
+                ...res.data, 
+                _id: res.data._id || res.data.id,
+                status: res.data.status || 'todo',
+                priority: res.data.priority || 'medium'
+            };
+
+            // Update both tasks and userTasks arrays
+            set(state => ({ 
+                tasks: state.tasks.map(t => t._id === taskId ? updatedTask : t),
+                userTasks: state.userTasks.map(t => t._id === taskId ? updatedTask : t)
+            }));
+
+            toast.success("Task updated successfully");
+            return updatedTask;
         } catch (error) {
-            toast.error("Error updating task");
+            console.error('Error updating task:', error);
+            console.log('Error response:', error.response?.data);
+
+            // Handle specific error cases
+            if (error.response?.status === 401) {
+                toast.error("Please login again to continue");
+                // Let axios interceptor handle the redirect
+            } else if (error.response?.status === 403) {
+                toast.error("You don't have permission to update this task");
+            } else {
+                const errorMessage = error.response?.data?.message || "Error updating task";
+                toast.error(errorMessage);
+            }
+
+            throw error;
         } finally {
             set(state => ({ taskActionLoading: { ...state.taskActionLoading, [taskId]: false } }));
         }

@@ -214,8 +214,8 @@ export default function TasksPage() {
                   <div className="flex items-center justify-between gap-2 px-4 pt-4">
                     <div className="font-bold text-lg text-primary truncate" title={task.title}>{task.title}</div>
                     <div className="flex gap-1 items-center">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${isCompleted ? 'bg-green-100 text-green-700 border-green-300' : 'bg-base-100 border-base-300 text-base-content'}`}>{task.status.replace('_', ' ')}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${task.priority === 'urgent' ? 'bg-red-100 text-red-700 border-red-300' : 'bg-base-100 border-base-300 text-base-content'}`}>{task.priority}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${isCompleted ? 'bg-green-100 text-green-700 border-green-300' : 'bg-base-100 border-base-300 text-base-content'}`}>{task.status ? task.status.replace('_', ' ') : 'todo'}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${task.priority === 'urgent' ? 'bg-red-100 text-red-700 border-red-300' : 'bg-base-100 border-base-300 text-base-content'}`}>{task.priority || 'medium'}</span>
                       {task.dueDate && (
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${isOverdue ? 'bg-red-100 text-red-700 border-red-300' : 'bg-base-100 border-base-300 text-base-content'}`} title="Due date">
                           {isOverdue ? <span className="text-red-600 font-bold mr-1" title="Overdue">⚠</span> : null}
