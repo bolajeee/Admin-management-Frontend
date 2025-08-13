@@ -1,22 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import {           <div className="flex items-center gap-2">
-            <Link 
-              to="/settings" 
-              className={`btn btn-sm btn-ghost hover:bg-base-200 gap-2 ${
-                isAdminRoute ? 'hidden lg:inline-flex' : 'inline-flex'
-              }`}
-            >
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Settings</span>
-            </Link>
-
-            {authUser && (
-              <>
-                <Link 
-                  to="/profile" 
-                  className={`btn btn-sm btn-ghost hover:bg-base-200 gap-2 ${
-                    isAdminRoute ? 'hidden lg:inline-flex' : 'inline-flex'
-                  }`}>m "../store/useAuthStore";
+import { useAuthStore } from "../store/useAuthStore";
 import {
   LogOut,
   MessageSquare,
