@@ -21,6 +21,21 @@ import { useAdminLayout } from '../../hooks/useAdminLayout';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useThemeStore } from '../../store/useThemeStore';
 
+/**
+ * AdminLayout - Main layout for all admin pages.
+ * 
+ * Features:
+ * - Responsive sidebar navigation for admin sections.
+ * - Mobile-friendly menu toggle.
+ * - Header with breadcrumbs and context.
+ * - Logout functionality.
+ * - Accessible navigation and controls.
+ * 
+ * Usage:
+ * Wrap all admin routes with this layout for consistent UI and navigation.
+ */
+
+// Navigation items for sidebar, grouped by section
 const adminNavItems = [
   {
     section: 'Main',
@@ -52,50 +67,47 @@ const adminNavItems = [
 ];
 
 export default function AdminLayout() {
+  // Custom hook for mobile menu state
   const { mobileMenuOpen, toggleMobileMenu, closeMobileMenu } = useAdminLayout();
+  // Auth store for logout
   const { logout } = useAuthStore();
+  // Router location for active nav highlighting
   const location = useLocation();
+  // Theme store for dark/light mode
   const { theme } = useThemeStore();
 
   return (
     <div className="h-screen flex overflow-hidden bg-base-100" data-theme={theme}>
-      {/* Mobile menu overlay */}
+      {/* Mobile menu overlay for accessibility */}
       {mobileMenuOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={closeMobileMenu}
+          aria-label="Close mobile menu"
+          tabIndex={0}
         />
       )}
 
-      {/* Enhanced Sidebar */}
+      {/* Sidebar navigation */}
       <div
-        className={`z-50 w-72 transform bg-base-200 border-r border-base-300 shadow-lg transition-transform duration-300 ease-in-out 
+        className={`w-72 transform bg-base-200 border-r border-base-300 shadow-lg transition-transform duration-300 ease-in-out 
           fixed top-0 inset-y-0 left-0 
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+        aria-label="Admin sidebar navigation"
       >
         <div className="flex h-full flex-col">
-          {/* Header */}
-          <div className="flex h-16 items-center justify-between border-b border-base-300 px-6 bg-base-100">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <UserCog className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-primary">Admin Panel</h1>
-                <p className="text-xs text-base-content/60">Management Console</p>
-              </div>
-            </div>
-            <button
-              onClick={toggleMobileMenu}
-              className="rounded-md p-2 text-base-content/60 hover:bg-base-300 md:hidden transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+         {/* Mobile close button */}
+                                   {/* <button
+                                     onClick={toggleMobileMenu}
+                                     className="absolute top-8 right-4 rounded-md p-2 text-base-content/60 hover:bg-base-300 md:hidden transition-colors"
+                                     aria-label="Close sidebar"
+                                   >
+                                     <X className="h-5 w-5" />
+                                   </button> */}
 
-          {/* Navigation */}
-          <div className="flex-1 flex flex-col overflow-y-auto">
-            <nav className="flex-1 px-4 py-6 space-y-6">
+          {/* Sidebar navigation links */}
+          <div className="flex-1 flex flex-col pt-6 overflow-y-auto">
+            <nav className="flex-1 px-4 py-6 space-y-6" aria-label="Admin navigation">
               {adminNavItems.map((section) => (
                 <div key={section.section}>
                   <h3 className="text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-3 px-2">
@@ -111,6 +123,7 @@ export default function AdminLayout() {
                           : 'text-base-content hover:bg-base-300 hover:text-primary'
                           }`}
                         onClick={closeMobileMenu}
+                        aria-current={location.pathname === item.path ? "page" : undefined}
                       >
                         <span className="mr-3 group-hover:scale-110 transition-transform">
                           {item.icon}
@@ -131,11 +144,12 @@ export default function AdminLayout() {
               ))}
             </nav>
 
-            {/* Footer */}
+            {/* Sidebar footer with logout */}
             <div className="border-t border-base-300 p-4">
               <button
                 onClick={logout}
                 className="flex items-center w-full rounded-lg px-3 py-3 text-sm font-medium text-error transition-all duration-200 hover:bg-error/10 hover:scale-[1.02] group"
+                aria-label="Logout"
               >
                 <LogOut className="mr-3 h-5 w-5 group-hover:rotate-12 transition-transform" />
                 <div>
@@ -148,22 +162,24 @@ export default function AdminLayout() {
         </div>
       </div>
 
-      {/* Mobile Toggle Button */}
+      {/* Mobile menu toggle button */}
       {!mobileMenuOpen && (
         <button
           onClick={toggleMobileMenu}
           className="fixed top-4 left-4 z-50 p-3 rounded-lg shadow-lg bg-primary text-white md:hidden hover:bg-primary/90 transition-colors"
+          aria-label="Open sidebar"
         >
           <Menu className="w-5 h-5" />
         </button>
       )}
 
-      {/* Main Content Area */}
+      {/* Main content area */}
       <div className="flex flex-1 flex-col h-screen md:ml-72">
-        {/* Enhanced Header */}
+        {/* Header with breadcrumbs */}
         <header className="h-16 flex items-center justify-between px-6 border-b border-base-300 bg-base-100/80 backdrop-blur z-30 shadow-sm">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold text-primary">
+              {/* Show current section name or fallback */}
               {adminNavItems.flatMap(section => section.items).find(item => location.pathname === item.path)?.name || 'Admin'}
             </h1>
             <div className="hidden md:flex items-center gap-2 text-sm text-base-content/60">
@@ -186,18 +202,21 @@ export default function AdminLayout() {
               <Activity className="h-4 w-4" />
               <span>Admin Console</span>
             </div>
+            {/* Mobile menu toggle in header */}
             <button
               onClick={toggleMobileMenu}
               className="rounded-lg p-2 text-base-content/60 hover:bg-base-300 md:hidden transition-colors"
+              aria-label="Open sidebar"
             >
               <Menu className="h-5 w-5" />
             </button>
           </div>
         </header>
 
-        {/* Main Content */}
+        {/* Main content outlet for admin pages */}
         <main className="flex-1 overflow-y-auto bg-base-100">
           <div className="p-6">
+            {/* Renders the current admin page */}
             <Outlet />
           </div>
         </main>

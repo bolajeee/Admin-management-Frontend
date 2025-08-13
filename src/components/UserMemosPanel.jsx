@@ -86,10 +86,7 @@ export default function UserMemosPanel() {
 
   return (
     <div className="p-4 bg-base-100 dark:bg-base-200 flex-1 overflow-y-auto w-full max-w-md md:max-w-lg">
-      <div className="flex items-center gap-2 mb-4 text-primary font-semibold">
-        <ScrollText className="w-5 h-5" />
-        <h2 className="text-lg">Memos</h2>
-      </div>
+    
       {isUserMemosLoading ? (
         <div className="text-sm text-gray-500 flex items-center gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading...

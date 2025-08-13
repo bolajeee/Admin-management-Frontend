@@ -1,18 +1,29 @@
-// src/pages/admin/DashboardPage.jsx
+
+/**
+ * DashboardPage - Admin dashboard for analytics, quick actions, and recent activity.
+ *
+ * Features:
+ * - Shows stats for employees, memos, tasks, and messages.
+ * - Displays analytics charts for tasks and memos.
+ * - Quick actions for adding users, sending memos, and creating tasks.
+ * - Recent activity feed for admins.
+ * - Responsive and accessible layout.
+ */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../../lib/axios';
 import DashboardStats from '../../components/dashboard/DashboardStats';
 import QuickActions from '../../components/dashboard/QuickActions';
 import MemoModal from '../../components/modals/MemoModal';
-import TaskModal from '../../components/modals/TaskModal'; // Use your existing TaskModal
+import TaskModal from '../../components/modals/TaskModal';
 import { useTaskStore } from '../../store/useTaskStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { useChatStore } from '../../store/useChatStore'; // To get users list
+import { useChatStore } from '../../store/useChatStore';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { Clock, User, CheckSquare, Bell, MessageSquare } from 'lucide-react';
 
 function DashboardPage() {
+  // State for dashboard stats
   const [stats, setStats] = useState({
     employees: 0,
     memos: 0,
@@ -52,6 +63,7 @@ function DashboardPage() {
   // For the task modal - we need the users list
   const { users, getUsers, isUsersLoading } = useChatStore();
 
+  // Fetch dashboard data on mount
   useEffect(() => {
     fetchDashboardStats();
     fetchSuggestedActions();
@@ -188,14 +200,16 @@ function DashboardPage() {
     }
   };
 
+
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      {/* Page Header */}
+      <h1 className="text-2xl font-bold" aria-label="Dashboard">Dashboard</h1>
 
-      {/* Dashboard Stats */}
+      {/* Dashboard Stats: Shows key metrics for admins */}
       <DashboardStats stats={stats} loading={loading} />
 
-      {/* Analytics Charts - Full Width */}
+      {/* Analytics Charts: Visualize tasks and memos over time */}
       <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow">
         <h2 className="text-xl font-semibold mb-6">Analytics Overview</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -307,7 +321,7 @@ function DashboardPage() {
 
       {/* Quick Actions and Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
+        {/* Quick Actions: Admin shortcuts for common actions */}
         <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow">
           <QuickActions
             actions={actions}
@@ -319,7 +333,7 @@ function DashboardPage() {
           />
         </div>
 
-        {/* Recent Activity */}
+        {/* Recent Activity: Feed of latest admin actions */}
         <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow">
           <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
           {recentActivityLoading ? (
@@ -355,7 +369,7 @@ function DashboardPage() {
         </div>
       </div>
 
-      {/* Memo Modal */}
+      {/* Memo Modal: For sending memos to users */}
       <MemoModal
         show={showMemoModal}
         onClose={() => setShowMemoModal(false)}
@@ -367,15 +381,15 @@ function DashboardPage() {
         sendingMemo={sendingMemo}
       />
 
-      {/* Task Modal */}
+      {/* Task Modal: For creating new tasks */}
       {showTaskModal && (
         <TaskModal
           show={showTaskModal}
           onClose={() => setShowTaskModal(false)}
           onSubmit={handleTaskSubmit}
           submitting={submittingTask}
-          initialTask={{}} // Empty task for creation
-          users={users}  // Pass the users list
+          initialTask={{}}
+          users={users}
           mode="create"
         />
       )}

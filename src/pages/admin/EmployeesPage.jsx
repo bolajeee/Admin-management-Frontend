@@ -11,20 +11,32 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 import { Tab } from '@headlessui/react';
 
+/**
+ * EmployeesPage - Admin page for managing employees and admins.
+ *
+ * Features:
+ * - List, search, add, and remove users (employees/admins).
+ * - View user details, tasks, messages, and memos.
+ * - Responsive and accessible layout.
+ */
 export default function EmployeesPage() {
+    // Theme and navigation
   const { theme } = useThemeStore();
+  const navigate = useNavigate();
+  const { deleteUser } = useAuthStore();
+
+  // State management
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
-  const navigate = useNavigate();
 
-  const { deleteUser } = useAuthStore();
-
+  // Modal states
   const [showModal, setShowModal] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', role: 'employee' });
   const [addLoading, setAddLoading] = useState(false);
 
+  // Detail modal states
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [activeTab, setActiveTab] = useState('tasks');
@@ -32,7 +44,7 @@ export default function EmployeesPage() {
   const [userMessages, setUserMessages] = useState([]);
   const [userMemos, setUserMemos] = useState([]);
   const [detailLoading, setDetailLoading] = useState(false);
-
+// Fetch users on mount
   useEffect(() => {
     async function fetchUsers() {
       setLoading(true);
@@ -48,6 +60,7 @@ export default function EmployeesPage() {
     fetchUsers();
   }, []);
 
+  // Handler for deleting users
   const handleDeleteUser = async (userId, userName) => {
     if (window.confirm(`Are you sure you want to remove ${userName}?`)) {
       try {
@@ -60,15 +73,15 @@ export default function EmployeesPage() {
     }
   };
 
+  // Handler for adding new users
   const handleAddUser = async (e) => {
     e.preventDefault();
     setAddLoading(true);
     try {
-      const res = await axiosInstance.post('/auth/create', newUser); // 🔁 adjust route as needed
+      const res = await axiosInstance.post('/auth/create', newUser);
       setUsers((prev) => [...prev, res.data.user]);
       setShowModal(false);
       setNewUser({ name: '', email: '', role: 'employee' });
-      // Show default password info
       const defaultPassword = newUser.role === 'admin' ? 'admin' : 'employee';
       alert(`User created! Default password: '${defaultPassword}'. They should change it after first login.`);
     } catch {
@@ -84,7 +97,7 @@ export default function EmployeesPage() {
     (user.email || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  // Fetch user-specific data
+  // Fetch user details for modal
   const fetchUserDetails = async (user, tab) => {
     setSelectedUser(user);
     setActiveTab(tab);
@@ -99,7 +112,7 @@ export default function EmployeesPage() {
         setUserMessages(res.data);
       } else if (tab === 'memos') {
         const res = await axiosInstance.get(`/memos/user/${user._id}`);
-        setUserMemos(res.data.data || res.data); // handle both array and {data: array}
+        setUserMemos(res.data.data || res.data);
       }
     } catch {
       if (tab === 'tasks') setUserTasks([]);
@@ -110,7 +123,8 @@ export default function EmployeesPage() {
     }
   };
 
-  return (
+
+    return (
     <div data-theme={theme}>
       <h1 className="text-2xl font-bold mb-6 pt-[100px]">Manage Employees & Admins</h1>
 
@@ -175,7 +189,7 @@ export default function EmployeesPage() {
                   <Trash2 className="h-5 w-5" />
                 </button>
               </CardHeader>
-              <CardContent>
+              {/* <CardContent>
                 <div className="flex flex-col gap-2 mt-2">
                   <button
                     className="flex items-center gap-2 px-3 py-2 rounded hover:bg-primary/10 transition-colors text-sm"
@@ -199,7 +213,7 @@ export default function EmployeesPage() {
                     <FileText className="h-4 w-4" /> View Memos
                   </button>
                 </div>
-              </CardContent>
+              </CardContent> */}
             </Card>
           ))}
         </div>
@@ -343,5 +357,6 @@ export default function EmployeesPage() {
         </div>
       )}
     </div>
-  );
-}
+)
+
+};

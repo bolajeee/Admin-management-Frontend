@@ -1,33 +1,46 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
 import { Users } from "lucide-react";
 
-const Sidebar = () => {
-  const { getUsers, users, selectedUser, setSelectedUser, isUserLoading } = useChatStore();
+/**
+ * Sidebar - Displays a list of users/contacts for chat navigation.
+ *
+ * Features:
+ * - Shows all users fetched from the backend.
+ * - Highlights the selected user.
+ * - Shows online status with a green dot.
+ * - Responsive: shows more info on larger screens.
+ * - Accessible: uses buttons for navigation.
+ */
 
+const Sidebar = () => {
+  // Chat store: manages users and selected user state
+  const { getUsers, users, selectedUser, setSelectedUser, isUserLoading } = useChatStore();
+  // Auth store: provides online users array
   const { onlineUsers } = useAuthStore((state) => state);
 
+  // Fetch users on mount
   useEffect(() => {
     getUsers();
-    // console.log("Fetching users...");
   }, []);
 
-
-
+  // Show skeleton loader while users are loading
   if (isUserLoading) return <SidebarSkeleton />;
-  
-  // Add a check to ensure users exists and is an array
+
+  // Show message if no users found
   if (!users || users.length === 0) {
     return (
       <aside className="h-full w-20 lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
+        {/* Sidebar header */}
         <div className="border-b border-base-300 w-full p-5">
           <div className="flex items-center gap-2">
             <Users className="size-6" />
             <span className="font-medium hidden lg:block">Contacts</span>
           </div>
         </div>
+        {/* Empty state */}
         <div className="flex items-center justify-center h-full">
           <p className="text-sm text-gray-500">No users found</p>
         </div>
@@ -37,13 +50,15 @@ const Sidebar = () => {
 
   return (
     <aside className="h-full w-[280px] lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
+      {/* Sidebar header */}
       <div className="border-b border-base-300 w-full p-5">
         <div className="flex items-center gap-2">
           <Users className="size-6" />
           <span className="font-medium hidden lg:block">Contacts</span>
         </div>
-        {/* TODO: Online filter toggle */}
+        {/* Future: Add online filter toggle here */}
       </div>
+      {/* User list */}
       <div className="overflow-y-auto w-full py-3">
         {users.map((user) => (
           <button
@@ -54,7 +69,9 @@ const Sidebar = () => {
               hover:bg-base-300 transition-colors
               ${selectedUser?._id === user._id ? "bg-base-300 ring-1 ring-base-300" : ""}
             `}
+            aria-label={`Select ${user.name || user.email} for chat`}
           >
+            {/* User avatar and online status */}
             <div className="relative mx-auto lg:mx-0">
               <img
                 src={user.profilePicture || user.profilePic || "/avatar.png"}
@@ -64,6 +81,7 @@ const Sidebar = () => {
               {onlineUsers.includes(user._id) && (
                 <span
                   className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-zinc-900"
+                  aria-label="Online"
                 />
               )}
             </div>
