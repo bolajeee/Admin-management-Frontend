@@ -25,8 +25,8 @@ export const useAuthStore = create(
         try {
           const res = await axiosInstance.get("/auth/check");
           const user = res.data && typeof res.data === 'object' && res.data.role
-            ? { ...res.data, role: res.data.role.trim() }
-            : res.data;
+  ? { ...res.data, role: typeof res.data.role === 'string' ? res.data.role.trim() : res.data.role.name }
+  : res.data;
 
           set({ 
             authUser: user,
@@ -52,7 +52,7 @@ export const useAuthStore = create(
         try {
           const res = await axiosInstance.post("/auth/signup", formData);
           // Trim role if present
-          const user = res.data && typeof res.data === 'object' && res.data.role ? { ...res.data, role: res.data.role.trim() } : res.data;
+          const user = res.data && typeof res.data === 'object' && res.data.role ? { ...res.data, role: typeof res.data.role === 'string' ? res.data.role.trim() : res.data.role.name } : res.data;
           set({ authUser: user });
           toast.success("Signup successful");
         } catch (error) {

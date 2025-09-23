@@ -10,6 +10,8 @@ import { useThemeStore } from '../../store/useThemeStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 import { Tab } from '@headlessui/react';
+import toast from 'react-hot-toast';
+import ConfirmationModal from '../../components/modals/ConfirmationModal';
 
 /**
  * EmployeesPage - Admin page for managing employees and admins.
@@ -20,6 +22,37 @@ import { Tab } from '@headlessui/react';
  * - Responsive and accessible layout.
  */
 export default function EmployeesPage() {
+  // Modal states for confirmation
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  // Confirm handlers
+  const confirmDeleteUser = async () => {
+    if (!selectedUser) return;
+    try {
+      await axiosInstance.delete(`/admin/users/${selectedUser._id}`);
+      setUsers(users.filter(u => u._id !== selectedUser._id));
+      toast.success('User deleted successfully');
+      setShowDeleteModal(false);
+      setSelectedUser(null);
+    } catch {
+      setError('Failed to remove user');
+      toast.error('Failed to remove user');
+    }
+  };
+
+  const confirmResetPassword = async () => {
+    if (!selectedUser) return;
+    try {
+      await axiosInstance.post(`/admin/users/${selectedUser._id}/reset-password`);
+      toast.success('Password reset successfully.');
+      setShowResetModal(false);
+      setSelectedUser(null);
+    } catch {
+      toast.error('Failed to reset password.');
+    }
+  };
     // Theme and navigation
   const { theme } = useThemeStore();
   const navigate = useNavigate();
@@ -36,40 +69,31 @@ export default function EmployeesPage() {
   const [newUser, setNewUser] = useState({ email: '', role: 'employee' });
   const [addLoading, setAddLoading] = useState(false);
 
-  // Detail modal states
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('tasks');
-  const [userTasks, setUserTasks] = useState([]);
-  const [userMessages, setUserMessages] = useState([]);
-  const [userMemos, setUserMemos] = useState([]);
-  const [detailLoading, setDetailLoading] = useState(false);
-// Fetch users on mount
+  // Fetch users on mount
   useEffect(() => {
     async function fetchUsers() {
       setLoading(true);
       try {
         const res = await axiosInstance.get('/messages/users');
-        // Ensure we have an array of users
-        const usersData = Array.isArray(res.data) ? res.data : 
-                         Array.isArray(res.data.data) ? res.data.data : 
+        const usersData = Array.isArray(res.data) ? res.data :
+                         Array.isArray(res.data.data) ? res.data.data :
                          Array.isArray(res.data.users) ? res.data.users : [];
-                         
-        // Normalize the user data
+
         const normalizedUsers = usersData.map(user => ({
           _id: user._id || user.id,
           name: user.name || '',
           email: user.email || '',
           role: user.role || 'employee',
           profilePicture: user.profilePicture || user.profilePic || '/avatar.png',
-          lastSeen: user.lastSeen || null
+          lastSeen: user.lastSeen || null,
+          active: user.active !== undefined ? user.active : true, // Assume active if not specified
         }));
 
         setUsers(normalizedUsers);
       } catch (err) {
         console.error('Error fetching users:', err);
         setError('Failed to load users');
-        setUsers([]); // Ensure users is always an array
+        setUsers([]);
       } finally {
         setLoading(false);
       }
@@ -78,16 +102,9 @@ export default function EmployeesPage() {
   }, []);
 
   // Handler for deleting users
-  const handleDeleteUser = async (userId, userName) => {
-    if (window.confirm(`Are you sure you want to remove ${userName}?`)) {
-      try {
-        await deleteUser(userId);
-        const res = await axiosInstance.get('/messages/users');
-        setUsers(res.data);
-      } catch {
-        setError('Failed to remove user');
-      }
-    }
+  const handleDeleteUser = (userId, userName) => {
+    setSelectedUser(users.find(u => u._id === userId));
+    setShowDeleteModal(true);
   };
 
   // Handler for adding new users
@@ -100,12 +117,29 @@ export default function EmployeesPage() {
       setShowModal(false);
       setNewUser({ name: '', email: '', role: 'employee' });
       const defaultPassword = newUser.role === 'admin' ? 'admin' : 'employee';
-      alert(`User created! Default password: '${defaultPassword}'. They should change it after first login.`);
+      toast.success(`User created! Default password: '${defaultPassword}'. They should change it after first login.`);
     } catch {
-      alert("Failed to add user.");
+      toast.error("Failed to add user.");
     } finally {
       setAddLoading(false);
     }
+  };
+
+  const handleToggleActive = async (userId, currentStatus) => {
+    setUsers(users.map(u => u._id === userId ? { ...u, active: !currentStatus } : u));
+
+    try {
+      await axiosInstance.patch(`/admin/users/${userId}/toggle-active`);
+      toast.success(`User ${!currentStatus ? 'activated' : 'deactivated'} successfully.`);
+    } catch (error) {
+      setUsers(users.map(u => u._id === userId ? { ...u, active: currentStatus } : u));
+      toast.error('Failed to update user status.');
+    }
+  };
+
+  const handleResetPassword = async (userId) => {
+    setSelectedUser(users.find(u => u._id === userId));
+    setShowResetModal(true);
   };
 
   // Filter users by search with safety checks
@@ -113,33 +147,6 @@ export default function EmployeesPage() {
     ((user?.name || '').toLowerCase().includes(search.toLowerCase()) ||
      (user?.email || '').toLowerCase().includes(search.toLowerCase()))
   ) : [];
-
-  // Fetch user details for modal
-  const fetchUserDetails = async (user, tab) => {
-    setSelectedUser(user);
-    setActiveTab(tab);
-    setDetailModalOpen(true);
-    setDetailLoading(true);
-    try {
-      if (tab === 'tasks') {
-        const res = await axiosInstance.get(`/tasks/getUserTasks/${user._id}`);
-        setUserTasks(res.data);
-      } else if (tab === 'messages') {
-        const res = await axiosInstance.get(`/messages/user/${user._id}`);
-        setUserMessages(res.data);
-      } else if (tab === 'memos') {
-        const res = await axiosInstance.get(`/memos/user/${user._id}`);
-        setUserMemos(res.data.data || res.data);
-      }
-    } catch {
-      if (tab === 'tasks') setUserTasks([]);
-      if (tab === 'messages') setUserMessages([]);
-      if (tab === 'memos') setUserMemos([]);
-    } finally {
-      setDetailLoading(false);
-    }
-  };
-
 
     return (
     <div data-theme={theme}>
@@ -169,78 +176,80 @@ export default function EmployeesPage() {
       ) : error ? (
         <div className="text-red-500">{error}</div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredUsers.length === 0 ? (
-            <div className="col-span-full text-center text-base-content/60">No users found.</div>
-          ) : filteredUsers.map((user) => (
-            <Card key={user._id} className="transition-shadow hover:shadow-lg group border border-base-200 hover:border-primary/40">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div className="flex items-center gap-3">
-                  {user.role === 'admin' ? (
-                    <UserCog className="h-7 w-7 text-blue-600" />
-                  ) : (
-                    <User className="h-7 w-7 text-gray-500" />
-                  )}
-                  <img
-                    src={user.profilePicture || user.profilePic || '/avatar.png'}
-                    alt={user.name || user.email}
-                    className="h-10 w-10 rounded-full object-cover border border-base-300"
-                  />
-                  <div>
-                    <CardTitle className="text-base font-semibold">
-                      {user.name || user.email}
-                    </CardTitle>
-                    <span className={`text-xs px-2 py-1 rounded ${user.role === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                      {user.role}
-                    </span>
-                    {user.lastSeen && (
-                      <div className="text-xs text-base-content/60 mt-0.5">Last seen: {new Date(user.lastSeen).toLocaleString()}</div>
-                    )}
-                  </div>
-                </div>
-                <button
-                  className="text-red-500 hover:text-red-700"
-                  title="Remove"
-                  onClick={() => handleDeleteUser(user._id, user.name)}
-                >
-                  <Trash2 className="h-5 w-5" />
-                </button>
-              </CardHeader>
-              {/* <CardContent>
-                <div className="flex flex-col gap-2 mt-2">
-                  <button
-                    className="flex items-center gap-2 px-3 py-2 rounded hover:bg-primary/10 transition-colors text-sm"
-                    onClick={() => fetchUserDetails(user, 'tasks')}
-                    title="View this user's tasks"
-                  >
-                    <ClipboardList className="h-4 w-4" /> View Tasks
-                  </button>
-                  <button
-                    className="flex items-center gap-2 px-3 py-2 rounded hover:bg-primary/10 transition-colors text-sm"
-                    onClick={() => fetchUserDetails(user, 'messages')}
-                    title="View this user's messages"
-                  >
-                    <Mail className="h-4 w-4" /> View Messages
-                  </button>
-                  <button
-                    className="flex items-center gap-2 px-3 py-2 rounded hover:bg-primary/10 transition-colors text-sm"
-                    onClick={() => fetchUserDetails(user, 'memos')}
-                    title="View this user's memos"
-                  >
-                    <FileText className="h-4 w-4" /> View Memos
-                  </button>
-                </div>
-              </CardContent> */}
-            </Card>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="table w-full">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Last Seen</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map((user) => (
+                <tr key={user._id}>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div className="avatar">
+                        <div className="mask mask-squircle w-12 h-12">
+                          <img src={user.profilePicture || '/avatar.png'} alt={user.name} />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-bold">{user.name}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{user.email}</td>
+                  <td>{user.role}</td>
+                  <td>{user.lastSeen ? new Date(user.lastSeen).toLocaleString() : 'N/A'}</td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      className="toggle toggle-success"
+                      checked={user.active}
+                      onChange={() => handleToggleActive(user._id, user.active)}
+                    />
+                  </td>
+                  <td>
+                    <div className="dropdown dropdown-end">
+                      <button tabIndex={0} className="btn btn-ghost btn-xs">...</button>
+                      <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+                        <li><a onClick={() => handleResetPassword(user._id)}>Reset Password</a></li>
+                        <li><a onClick={() => handleDeleteUser(user._id, user.name)}>Delete User</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
+
+      <ConfirmationModal
+        show={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDeleteUser}
+        title="Delete User"
+        message={`Are you sure you want to delete ${selectedUser?.name}?`}
+      />
+
+      <ConfirmationModal
+        show={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        onConfirm={confirmResetPassword}
+        title="Reset Password"
+        message={`Are you sure you want to reset the password for ${selectedUser?.name}?`}
+      />
 
       {/* === Modal === */}
       {showModal && (
         <div data-theme={theme} className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
           <div className="bg-base-100 text-base-content p-6 rounded-lg w-full max-w-md shadow-lg relative">
-            {/* Close (X) button */}
             <button
               type="button"
               className="absolute top-3 right-3 text-base-content hover:text-error focus:outline-none"
@@ -309,71 +318,6 @@ export default function EmployeesPage() {
           </div>
         </div>
       )}
-
-      {/* User Details Modal */}
-      {detailModalOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-          <div className="bg-base-100 text-base-content p-6 rounded-lg w-full max-w-2xl shadow-lg relative">
-            <button
-              type="button"
-              className="absolute top-3 right-3 text-base-content hover:text-error focus:outline-none"
-              aria-label="Close modal"
-              onClick={() => setDetailModalOpen(false)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <h2 className="text-xl font-semibold mb-4">{selectedUser.name || selectedUser.email}</h2>
-            <Tabs selectedIndex={['tasks', 'messages', 'memos'].indexOf(activeTab)} onChange={i => setActiveTab(['tasks', 'messages', 'memos'][i])}>
-              <Tab.List className="flex gap-2 mb-4">
-                <Tab className={({ selected }) => `px-4 py-2 rounded ${selected ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content'}`}>Tasks</Tab>
-                <Tab className={({ selected }) => `px-4 py-2 rounded ${selected ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content'}`}>Messages</Tab>
-                <Tab className={({ selected }) => `px-4 py-2 rounded ${selected ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content'}`}>Memos</Tab>
-              </Tab.List>
-              <Tab.Panels>
-                <Tab.Panel>
-                  {detailLoading ? <div className="flex items-center justify-center h-32"><span className="loading loading-spinner loading-lg text-primary"></span></div> : (
-                    <ul className="max-h-64 overflow-y-auto space-y-2">
-                      {userTasks.length === 0 ? <li className="text-base-content/60 text-sm">No tasks found.</li> : userTasks.map((task, i) => (
-                        <li key={task._id || i} className="border-b border-base-200 pb-2">
-                          <div className="font-medium text-base-content">{task.title}</div>
-                          <div className="text-xs text-base-content/60">Status: {task.status} | Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </Tab.Panel>
-                <Tab.Panel>
-                  {detailLoading ? <div className="flex items-center justify-center h-32"><span className="loading loading-spinner loading-lg text-primary"></span></div> : (
-                    <ul className="max-h-64 overflow-y-auto space-y-2">
-                      {userMessages.length === 0 ? <li className="text-base-content/60 text-sm">No messages found.</li> : userMessages.map((msg, i) => (
-                        <li key={msg._id || i} className="border-b border-base-200 pb-2">
-                          <div className="text-base-content">{msg.content}</div>
-                          <div className="text-xs text-base-content/60">Sent: {msg.createdAt ? new Date(msg.createdAt).toLocaleString() : 'N/A'}</div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </Tab.Panel>
-                <Tab.Panel>
-                  {detailLoading ? <div className="flex items-center justify-center h-32"><span className="loading loading-spinner loading-lg text-primary"></span></div> : (
-                    <ul className="max-h-64 overflow-y-auto space-y-2">
-                      {userMemos.length === 0 ? <li className="text-base-content/60 text-sm">No memos found.</li> : userMemos.map((memo, i) => (
-                        <li key={memo._id || i} className="border-b border-base-200 pb-2">
-                          <div className="font-medium text-base-content">{memo.title}</div>
-                          <div className="text-xs text-base-content/60">Sent: {memo.createdAt ? new Date(memo.createdAt).toLocaleString() : 'N/A'}</div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </Tab.Panel>
-              </Tab.Panels>
-            </Tabs>
-          </div>
-        </div>
-      )}
+      
     </div>
-)
-
-};
+)}

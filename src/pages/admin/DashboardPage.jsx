@@ -11,6 +11,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { axiosInstance } from '../../lib/axios';
 import DashboardStats from '../../components/dashboard/DashboardStats';
 import QuickActions from '../../components/dashboard/QuickActions';
@@ -21,6 +22,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useChatStore } from '../../store/useChatStore';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { Clock, User, CheckSquare, Bell, MessageSquare } from 'lucide-react';
+import ChartLoadingSkeleton from '../../components/skeletons/ChartLoadingSkeleton';
 
 function DashboardPage() {
   // State for dashboard stats
@@ -93,10 +95,10 @@ function DashboardPage() {
           }));
         }
       } catch (msgError) {
-        console.error('Error getting today messages count:', msgError);
+        toast.error('Error getting today messages count:');
       }
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      toast.error('Error fetching dashboard stats:');
     } finally {
       setLoading(false);
     }
@@ -108,7 +110,7 @@ function DashboardPage() {
       const response = await axiosInstance.get('/admin/suggested-actions');
       setActions(response.data.actions);
     } catch (error) {
-      console.error('Error fetching suggested actions:', error);
+      toast.error('Error fetching suggested actions:');
       setActions([]);
     } finally {
       setLoadingActions(false);
@@ -125,6 +127,7 @@ function DashboardPage() {
       setTasksCompletedData(tasksRes.data.data || []);
       setMemosReadData(memosRes.data.data || []);
     } catch (err) {
+      toast.error('Error fetching analytics data:');
       setTasksCompletedData([]);
       setMemosReadData([]);
     } finally {
@@ -138,6 +141,7 @@ function DashboardPage() {
       const res = await axiosInstance.get('/dashboard/recent-activity');
       setRecentActivity(res.data.data || []);
     } catch (err) {
+      toast.error('Error fetching recent activity:');
       setRecentActivity([]);
     } finally {
       setRecentActivityLoading(false);
@@ -176,8 +180,7 @@ function DashboardPage() {
       // Refresh dashboard stats to show the new memo count
       fetchDashboardStats();
     } catch (error) {
-      console.error('Error sending memo:', error);
-      alert('Failed to send memo. Please try again.');
+      toast.error('Failed to send memo. Please try again.');
     } finally {
       setSendingMemo(false);
     }
@@ -192,7 +195,7 @@ function DashboardPage() {
       // Refresh dashboard stats to show the updated task count
       fetchDashboardStats();
     } catch (error) {
-      console.error("Error creating task:", error);
+      toast.error("Error creating task:");
       // Let the modal handle the error display
       throw error;
     } finally {
@@ -218,31 +221,26 @@ function DashboardPage() {
             <h3 className="text-lg font-medium mb-4">Tasks Completed (Last 30 Days)</h3>
             <div className="h-80">
               {analyticsLoading ? (
-                <div className="flex items-center justify-center h-full animate-pulse text-base-content/60">
-                  <div className="text-center">
-                    <div className="loading loading-spinner loading-lg mb-2"></div>
-                    <p>Loading analytics...</p>
-                  </div>
-                </div>
+                <ChartLoadingSkeleton />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={tasksCompletedData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--n))" />
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                      tick={{ fontSize: 12, fill: 'hsl(var(--nc))' }}
                       tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     />
                     <YAxis
-                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                      tick={{ fontSize: 12, fill: 'hsl(var(--nc))' }}
                       allowDecimals={false}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#1F2937',
+                        backgroundColor: 'hsl(var(--b2))',
                         border: 'none',
                         borderRadius: '8px',
-                        color: '#F9FAFB'
+                        color: 'hsl(var(--bc))'
                       }}
                       labelFormatter={(value) => new Date(value).toLocaleDateString('en-US', {
                         weekday: 'long',
@@ -254,10 +252,10 @@ function DashboardPage() {
                     <Line
                       type="monotone"
                       dataKey="count"
-                      stroke="#6366f1"
+                      stroke="hsl(var(--p))"
                       strokeWidth={3}
-                      dot={{ r: 4, fill: '#6366f1' }}
-                      activeDot={{ r: 6, stroke: '#6366f1', strokeWidth: 2 }}
+                      dot={{ r: 4, fill: 'hsl(var(--p))' }}
+                      activeDot={{ r: 6, stroke: 'hsl(var(--p))', strokeWidth: 2 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -270,31 +268,26 @@ function DashboardPage() {
             <h3 className="text-lg font-medium mb-4">Memos Read (Last 30 Days)</h3>
             <div className="h-80">
               {analyticsLoading ? (
-                <div className="flex items-center justify-center h-full animate-pulse text-base-content/60">
-                  <div className="text-center">
-                    <div className="loading loading-spinner loading-lg mb-2"></div>
-                    <p>Loading analytics...</p>
-                  </div>
-                </div>
+                <ChartLoadingSkeleton />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={memosReadData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--n))" />
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                      tick={{ fontSize: 12, fill: 'hsl(var(--nc))' }}
                       tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     />
                     <YAxis
-                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                      tick={{ fontSize: 12, fill: 'hsl(var(--nc))' }}
                       allowDecimals={false}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#1F2937',
+                        backgroundColor: 'hsl(var(--b2))',
                         border: 'none',
                         borderRadius: '8px',
-                        color: '#F9FAFB'
+                        color: 'hsl(var(--bc))'
                       }}
                       labelFormatter={(value) => new Date(value).toLocaleDateString('en-US', {
                         weekday: 'long',
@@ -306,10 +299,10 @@ function DashboardPage() {
                     <Line
                       type="monotone"
                       dataKey="count"
-                      stroke="#10b981"
+                      stroke="hsl(var(--a))"
                       strokeWidth={3}
-                      dot={{ r: 4, fill: '#10b981' }}
-                      activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
+                      dot={{ r: 4, fill: 'hsl(var(--a))' }}
+                      activeDot={{ r: 6, stroke: 'hsl(var(--a))', strokeWidth: 2 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -346,15 +339,19 @@ function DashboardPage() {
           ) : (
             <ul className="space-y-4 max-h-80 overflow-y-auto pr-2">
               {recentActivity.map((item, idx) => {
-                let Icon = Clock;
-                let iconColor = 'text-base-content/60';
-                if (item.type === 'user') { Icon = User; iconColor = 'text-primary'; }
-                if (item.type === 'task') { Icon = CheckSquare; iconColor = 'text-blue-500'; }
-                if (item.type === 'memo') { Icon = Bell; iconColor = 'text-yellow-500'; }
-                if (item.type === 'message') { Icon = MessageSquare; iconColor = 'text-green-500'; }
+                const activityConfig = {
+                  user: { Icon: User, color: 'text-primary' },
+                  task: { Icon: CheckSquare, color: 'text-blue-500' },
+                  memo: { Icon: Bell, color: 'text-yellow-500' },
+                  message: { Icon: MessageSquare, color: 'text-green-500' },
+                  default: { Icon: Clock, color: 'text-base-content/60' },
+                };
+
+                const { Icon, color } = activityConfig[item.type] || activityConfig.default;
+
                 return (
                   <li key={idx} className="flex items-start gap-3">
-                    <span className={`rounded-full bg-base-200 p-2 ${iconColor}`}><Icon className="h-5 w-5" /></span>
+                    <span className={`rounded-full bg-base-200 p-2 ${color}`}><Icon className="h-5 w-5" /></span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm text-base-content font-medium truncate">{item.description}</div>
                       <div className="text-xs text-base-content/60 mt-0.5">

@@ -24,8 +24,9 @@ const AdminRoute = ({ children }) => {
   }
 
   // If logged in but not an admin
-  if (authUser.role?.trim().toLowerCase() !== 'admin') {
-    console.warn(`Unauthorized: Role '${authUser.role}' is not admin`);
+  const roleString = typeof authUser.role === 'string' ? authUser.role.trim().toLowerCase() : authUser.role?.name?.trim().toLowerCase();
+  if (roleString !== 'admin') {
+    console.warn(`Unauthorized: Role '${roleString}' is not admin`);
     return <Navigate to="/" replace />;
   }
 
