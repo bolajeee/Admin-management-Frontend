@@ -60,45 +60,59 @@ export default function EmployeesPage() {
 
   // State management
   const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState(''); // Always initialize as empty string
+  const [search, setSearch] = useState('');
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
-  const [newUser, setNewUser] = useState({ email: '', role: 'employee' });
+  const [newUser, setNewUser] = useState({ email: '', role: '' });
   const [addLoading, setAddLoading] = useState(false);
 
-  // Fetch users on mount
+  // Fetch users and roles on mount
   useEffect(() => {
-    async function fetchUsers() {
+    async function fetchData() {
       setLoading(true);
       try {
-        const res = await axiosInstance.get('/messages/users');
-        const usersData = Array.isArray(res.data) ? res.data :
-                         Array.isArray(res.data.data) ? res.data.data :
-                         Array.isArray(res.data.users) ? res.data.users : [];
+        const [usersRes, rolesRes] = await Promise.all([
+          axiosInstance.get('/messages/users'),
+          axiosInstance.get('/roles')
+        ]);
+
+        const usersData = Array.isArray(usersRes.data) ? usersRes.data :
+                         Array.isArray(usersRes.data.data) ? usersRes.data.data :
+                         Array.isArray(usersRes.data.users) ? usersRes.data.users : [];
 
         const normalizedUsers = usersData.map(user => ({
           _id: user._id || user.id,
           name: user.name || '',
           email: user.email || '',
-          role: user.role || 'employee',
+          role: user.role, // Keep role as is (ID)
           profilePicture: user.profilePicture || user.profilePic || '/avatar.png',
           lastSeen: user.lastSeen || null,
-          active: user.active !== undefined ? user.active : true, // Assume active if not specified
+          active: user.active !== undefined ? user.active : true,
         }));
 
         setUsers(normalizedUsers);
+
+        if (rolesRes.data && Array.isArray(rolesRes.data)) {
+          setRoles(rolesRes.data);
+          const employeeRole = rolesRes.data.find(role => role.name === 'employee');
+          if (employeeRole) {
+            setNewUser(prev => ({ ...prev, role: employeeRole._id }));
+          }
+        }
+
       } catch (err) {
-        console.error('Error fetching users:', err);
-        setError('Failed to load users');
+        console.error('Error fetching data:', err);
+        setError('Failed to load data');
         setUsers([]);
       } finally {
         setLoading(false);
       }
     }
-    fetchUsers();
+    fetchData();
   }, []);
 
   // Handler for deleting users
@@ -115,8 +129,11 @@ export default function EmployeesPage() {
       const res = await axiosInstance.post('/auth/create', newUser);
       setUsers((prev) => [...prev, res.data.user]);
       setShowModal(false);
-      setNewUser({ name: '', email: '', role: 'employee' });
-      const defaultPassword = newUser.role === 'admin' ? 'admin' : 'employee';
+      const employeeRole = roles.find(role => role.name === 'employee');
+      setNewUser({ name: '', email: '', role: employeeRole ? employeeRole._id : '' });
+
+      const roleName = roleMap[newUser.role] || '';
+      const defaultPassword = roleName.toLowerCase() === 'admin' ? 'admin' : 'employee';
       toast.success(`User created! Default password: '${defaultPassword}'. They should change it after first login.`);
     } catch {
       toast.error("Failed to add user.");
@@ -141,6 +158,12 @@ export default function EmployeesPage() {
     setSelectedUser(users.find(u => u._id === userId));
     setShowResetModal(true);
   };
+
+  // Create a map of role IDs to role names for quick lookup
+  const roleMap = roles.reduce((acc, role) => {
+    acc[role._id] = role.name;
+    return acc;
+  }, {});
 
   // Filter users by search with safety checks
   const filteredUsers = Array.isArray(users) ? users.filter(user =>
@@ -189,49 +212,42 @@ export default function EmployeesPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => {
-                if (!user) return null;
-                return (
-                  <tr key={user._id}>
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <div className="avatar">
-                          <div className="mask mask-squircle w-12 h-12">
-                            <img src={user.profilePicture || '/avatar.png'} alt={user.name || 'User'} />
-                          </div>
-                        </div>
-                        <div>
-                          <div className="font-bold">{user.name || 'Unknown'}</div>
+              {filteredUsers.map((user) => (
+                <tr key={user._id}>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div className="avatar">
+                        <div className="mask mask-squircle w-12 h-12">
+                          <img src={user.profilePicture || '/avatar.png'} alt={user.name} />
                         </div>
                       </div>
-                    </td>
-                    <td>{user.email || ''}</td>
-                    <td>
-                      {user.role && typeof user.role === 'object' && user.role.name
-                        ? user.role.name
-                        : (typeof user.role === 'string' ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Employee')}
-                    </td>
-                    <td>{user.lastSeen ? new Date(user.lastSeen).toLocaleString() : 'N/A'}</td>
-                    <td>
-                      <input
-                        type="checkbox"
-                        className="toggle toggle-success"
-                        checked={!!user.active}
-                        onChange={() => handleToggleActive(user._id, user.active)}
-                      />
-                    </td>
-                    <td>
-                      <div className="dropdown dropdown-end">
-                        <button tabIndex={0} className="btn btn-ghost btn-xs">...</button>
-                        <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
-                          <li><a onClick={() => handleResetPassword(user._id)}>Reset Password</a></li>
-                          <li><a onClick={() => handleDeleteUser(user._id, user.name)}>Delete User</a></li>
-                        </ul>
+                      <div>
+                        <div className="font-bold">{user.name}</div>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                    </div>
+                  </td>
+                  <td>{user.email}</td>
+                  <td>{user.role}</td>
+                  <td>{user.lastSeen ? new Date(user.lastSeen).toLocaleString() : 'N/A'}</td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      className="toggle toggle-success"
+                      checked={user.active}
+                      onChange={() => handleToggleActive(user._id, user.active)}
+                    />
+                  </td>
+                  <td>
+                    <div className="dropdown dropdown-end">
+                      <button tabIndex={0} className="btn btn-ghost btn-xs">...</button>
+                      <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+                        <li><a onClick={() => handleResetPassword(user._id)}>Reset Password</a></li>
+                        <li><a onClick={() => handleDeleteUser(user._id, user.name)}>Delete User</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -301,12 +317,16 @@ export default function EmployeesPage() {
                   onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                   className="select select-bordered w-full"
                 >
-                  <option value="employee">Employee</option>
-                  <option value="admin">Admin</option>
+                  {roles.map(role => (
+                    <option key={role._id} value={role._id}>
+                      {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
+                    </option>
+                  ))}
                 </select>
               </div>
+
               <div className="text-xs text-gray-500 bg-gray-100 rounded p-2">
-                A default password will be set for the new user: <b>'admin'</b> for admins, <b>'employee'</b> for employees. They should change it after first login.
+                A default password will be set for the new user. They should change it after first login.
               </div>
               <div className="flex justify-end gap-2">
                 <button
