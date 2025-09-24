@@ -13,21 +13,13 @@ import { Tab } from '@headlessui/react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../../components/modals/ConfirmationModal';
 
-/**
- * EmployeesPage - Admin page for managing employees and admins.
- *
- * Features:
- * - List, search, add, and remove users (employees/admins).
- * - View user details, tasks, messages, and memos.
- * - Responsive and accessible layout.
- */
 export default function EmployeesPage() {
-  // Modal states for confirmation
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState('');
 
-  // Confirm handlers
   const confirmDeleteUser = async () => {
     if (!selectedUser) return;
     try {
@@ -53,33 +45,29 @@ export default function EmployeesPage() {
       toast.error('Failed to reset password.');
     }
   };
-    // Theme and navigation
+
   const { theme } = useThemeStore();
   const navigate = useNavigate();
   const { deleteUser } = useAuthStore();
 
-  // State management
   const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState([]);
+  const [roles, setRoles] = useState([
+    { _id: 'employee', name: 'employee', description: 'Can view and manage their own tasks and memos.' },
+    { _id: 'admin', name: 'admin', description: 'Can manage all users, tasks, and memos.' }
+  ]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
 
-  // Modal states
   const [showModal, setShowModal] = useState(false);
-  const [newUser, setNewUser] = useState({ email: '', role: '' });
+  const [newUser, setNewUser] = useState({ name: '', email: '', role: '' });
   const [addLoading, setAddLoading] = useState(false);
 
-  // Fetch users and roles on mount
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       try {
-        const [usersRes, rolesRes] = await Promise.all([
-          axiosInstance.get('/messages/users'),
-          axiosInstance.get('/roles')
-        ]);
-
+        const usersRes = await axiosInstance.get('/messages/users');
         const usersData = Array.isArray(usersRes.data) ? usersRes.data :
                          Array.isArray(usersRes.data.data) ? usersRes.data.data :
                          Array.isArray(usersRes.data.users) ? usersRes.data.users : [];
@@ -88,7 +76,7 @@ export default function EmployeesPage() {
           _id: user._id || user.id,
           name: user.name || '',
           email: user.email || '',
-          role: user.role, // Keep role as is (ID)
+          role: user.role,
           profilePicture: user.profilePicture || user.profilePic || '/avatar.png',
           lastSeen: user.lastSeen || null,
           active: user.active !== undefined ? user.active : true,
@@ -96,12 +84,9 @@ export default function EmployeesPage() {
 
         setUsers(normalizedUsers);
 
-        if (rolesRes.data && Array.isArray(rolesRes.data)) {
-          setRoles(rolesRes.data);
-          const employeeRole = rolesRes.data.find(role => role.name === 'employee');
-          if (employeeRole) {
-            setNewUser(prev => ({ ...prev, role: employeeRole._id }));
-          }
+        const employeeRole = roles.find(role => role.name === 'employee');
+        if (employeeRole) {
+          setNewUser(prev => ({ ...prev, role: employeeRole._id }));
         }
 
       } catch (err) {
@@ -115,26 +100,23 @@ export default function EmployeesPage() {
     fetchData();
   }, []);
 
-  // Handler for deleting users
   const handleDeleteUser = (userId, userName) => {
     setSelectedUser(users.find(u => u._id === userId));
     setShowDeleteModal(true);
   };
 
-  // Handler for adding new users
   const handleAddUser = async (e) => {
     e.preventDefault();
     setAddLoading(true);
     try {
-      const res = await axiosInstance.post('/auth/create', newUser);
+      const newPassword = Math.random().toString(36).slice(-8);
+      const res = await axiosInstance.post('/auth/create', { ...newUser, password: newPassword });
       setUsers((prev) => [...prev, res.data.user]);
       setShowModal(false);
       const employeeRole = roles.find(role => role.name === 'employee');
       setNewUser({ name: '', email: '', role: employeeRole ? employeeRole._id : '' });
-
-      const roleName = roleMap[newUser.role] || '';
-      const defaultPassword = roleName.toLowerCase() === 'admin' ? 'admin' : 'employee';
-      toast.success(`User created! Default password: '${defaultPassword}'. They should change it after first login.`);
+      setGeneratedPassword(newPassword);
+      setShowPasswordModal(true);
     } catch {
       toast.error("Failed to add user.");
     } finally {
@@ -159,23 +141,20 @@ export default function EmployeesPage() {
     setShowResetModal(true);
   };
 
-  // Create a map of role IDs to role names for quick lookup
   const roleMap = roles.reduce((acc, role) => {
     acc[role._id] = role.name;
     return acc;
   }, {});
 
-  // Filter users by search with safety checks
   const filteredUsers = Array.isArray(users) ? users.filter(user =>
     ((user?.name || '').toLowerCase().includes(search.toLowerCase()) ||
      (user?.email || '').toLowerCase().includes(search.toLowerCase()))
   ) : [];
 
-    return (
+  return (
     <div data-theme={theme}>
       <h1 className="text-2xl font-bold mb-6 pt-[100px]">Manage Employees & Admins</h1>
 
-      {/* Search Bar */}
       <div className="mb-6 flex flex-col md:flex-row md:items-center gap-3 justify-between">
         <input
           type="text"
@@ -213,11 +192,11 @@ export default function EmployeesPage() {
             </thead>
             <tbody>
               {filteredUsers.map((user, idx) => {
-                // Defensive checks and defaults
+                if (!user) return null;
                 const userId = user?._id || user?.id || `unknown-${idx}`;
                 const userName = user?.name ?? '';
                 const userEmail = user?.email ?? '';
-                const userRole = typeof user?.role === 'string' ? user.role : (user?.role?.name ?? 'employee');
+                const userRole = roleMap[user.role] || user.role;
                 const userProfilePicture = user?.profilePicture || user?.profilePic || '/avatar.png';
                 const userLastSeen = user?.lastSeen ? new Date(user.lastSeen).toLocaleString() : 'N/A';
                 const userActive = typeof user?.active === 'boolean' ? user.active : true;
@@ -279,7 +258,6 @@ export default function EmployeesPage() {
         message={`Are you sure you want to reset the password for ${selectedUser?.name}?`}
       />
 
-      {/* === Modal === */}
       {showModal && (
         <div data-theme={theme} className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
           <div className="bg-base-100 text-base-content p-6 rounded-lg w-full max-w-md shadow-lg relative">
@@ -333,11 +311,9 @@ export default function EmployeesPage() {
                     </option>
                   ))}
                 </select>
+                <p className="text-xs text-gray-500 mt-1">{roles.find(r => r._id === newUser.role)?.description}</p>
               </div>
 
-              <div className="text-xs text-gray-500 bg-gray-100 rounded p-2">
-                A default password will be set for the new user. They should change it after first login.
-              </div>
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
@@ -355,6 +331,35 @@ export default function EmployeesPage() {
           </div>
         </div>
       )}
-      
+
+      {showPasswordModal && (
+        <div data-theme={theme} className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-base-100 text-base-content p-6 rounded-lg w-full max-w-md shadow-lg relative">
+            <h2 className="text-xl font-semibold mb-4">User Created Successfully</h2>
+            <p>The user has been created with the following password:</p>
+            <div className="flex items-center gap-2 my-4">
+              <input type="text" readOnly value={generatedPassword} className="input input-bordered w-full" />
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedPassword);
+                  toast.success('Password copied to clipboard!');
+                }}
+              >
+                Copy
+              </button>
+            </div>
+            <div className="flex justify-end">
+              <button
+                className="btn"
+                onClick={() => setShowPasswordModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-)}
+  );
+}
