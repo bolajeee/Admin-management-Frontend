@@ -189,42 +189,52 @@ export default function EmployeesPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user._id}>
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <div className="avatar">
-                        <div className="mask mask-squircle w-12 h-12">
-                          <img src={user.profilePicture || '/avatar.png'} alt={user.name} />
+              {filteredUsers.map((user, idx) => {
+                // Defensive checks and defaults
+                const userId = user?._id || user?.id || `unknown-${idx}`;
+                const userName = user?.name ?? '';
+                const userEmail = user?.email ?? '';
+                const userRole = typeof user?.role === 'string' ? user.role : (user?.role?.name ?? 'employee');
+                const userProfilePicture = user?.profilePicture || user?.profilePic || '/avatar.png';
+                const userLastSeen = user?.lastSeen ? new Date(user.lastSeen).toLocaleString() : 'N/A';
+                const userActive = typeof user?.active === 'boolean' ? user.active : true;
+                return (
+                  <tr key={userId}>
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <div className="avatar">
+                          <div className="mask mask-squircle w-12 h-12">
+                            <img src={userProfilePicture} alt={userName || 'User'} onError={e => { e.target.src = '/avatar.png'; }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-bold">{userName || <span className="italic text-gray-400">No Name</span>}</div>
                         </div>
                       </div>
-                      <div>
-                        <div className="font-bold">{user.name}</div>
+                    </td>
+                    <td>{userEmail || <span className="italic text-gray-400">No Email</span>}</td>
+                    <td>{userRole || <span className="italic text-gray-400">No Role</span>}</td>
+                    <td>{userLastSeen}</td>
+                    <td>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-success"
+                        checked={userActive}
+                        onChange={() => handleToggleActive(userId, userActive)}
+                      />
+                    </td>
+                    <td>
+                      <div className="dropdown dropdown-end">
+                        <button tabIndex={0} className="btn btn-ghost btn-xs">...</button>
+                        <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+                          <li><a onClick={() => handleResetPassword(userId)}>Reset Password</a></li>
+                          <li><a onClick={() => handleDeleteUser(userId, userName)}>Delete User</a></li>
+                        </ul>
                       </div>
-                    </div>
-                  </td>
-                  <td>{user.email}</td>
-                  <td>{user.role}</td>
-                  <td>{user.lastSeen ? new Date(user.lastSeen).toLocaleString() : 'N/A'}</td>
-                  <td>
-                    <input
-                      type="checkbox"
-                      className="toggle toggle-success"
-                      checked={user.active}
-                      onChange={() => handleToggleActive(user._id, user.active)}
-                    />
-                  </td>
-                  <td>
-                    <div className="dropdown dropdown-end">
-                      <button tabIndex={0} className="btn btn-ghost btn-xs">...</button>
-                      <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
-                        <li><a onClick={() => handleResetPassword(user._id)}>Reset Password</a></li>
-                        <li><a onClick={() => handleDeleteUser(user._id, user.name)}>Delete User</a></li>
-                      </ul>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
