@@ -4,43 +4,29 @@ import { useAuthStore } from "../store/useAuthStore";
 import AuthImagePattern from "../components/AuthImagePattern";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare } from "lucide-react";
+import { axiosInstance } from "../lib/axios";
+import toast from "react-hot-toast";
 
-
-/**
- * LoginPage - User authentication page for sign-in.
- *
- * Features:
- * - Email/password login form with validation and error handling.
- * - Password visibility toggle for user convenience.
- * - Redirects user after successful login based on role.
- * - Shows loading spinner while checking authentication status.
- * - Responsive and accessible layout.
- */
 const LoginPage = () => {
-  // State to toggle password visibility
   const [showPassword, setShowPassword] = useState(false);
-  // State for form input values
   const [formData, setFormData] = useState({ email: "", password: "" });
-  // State for error messages
   const [error, setError] = useState(null);
-  // State to track initial auth check
   const [isInitialCheck, setIsInitialCheck] = useState(true);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [isSendingPasswordReset, setIsSendingPasswordReset] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
-  // Redirect path after login
   const from = location.state?.from?.pathname || "/";
 
-  // Auth store: login function, loading states, user info
   const { login, isLoggingIn, authUser, isCheckingAuth } = useAuthStore();
 
-  // Redirect after successful login or if already authenticated
   useEffect(() => {
     if (isInitialCheck) {
       setIsInitialCheck(false);
       return;
     }
-    // If user is authenticated and not checking auth, redirect
     if (authUser?.role && !isCheckingAuth) {
       authUser.role === "admin"
         ? navigate("/admin/dashboard")
@@ -48,18 +34,15 @@ const LoginPage = () => {
     }
   }, [authUser, isCheckingAuth, isInitialCheck, navigate, from]);
 
-  // Handle form submission for login
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     try {
       const success = await login(formData);
-      // If login fails, show error
       if (!success) {
         setError("Login failed. Please check your credentials.");
       }
     } catch (error) {
-      // Show error from backend or generic message
       setError(
         error.response?.data?.message ||
         "An error occurred during login. Please try again."
@@ -67,7 +50,21 @@ const LoginPage = () => {
     }
   };
 
-  // Show loading spinner while checking authentication
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setIsSendingPasswordReset(true);
+    try {
+      await axiosInstance.post("/auth/forgot-password", { email: forgotPasswordEmail });
+      toast.success("An email has been sent with instructions to reset your password.");
+      setShowForgotPasswordModal(false);
+      setForgotPasswordEmail("");
+    } catch (error) {
+      toast.error("Failed to send password reset email. Please try again.");
+    } finally {
+      setIsSendingPasswordReset(false);
+    }
+  };
+
   if (isCheckingAuth && isInitialCheck) {
     return (
       <div className="flex items-center justify-center min-h-screen" aria-busy="true" aria-label="Loading">
@@ -78,10 +75,8 @@ const LoginPage = () => {
 
   return (
     <div className="h-screen grid lg:grid-cols-2">
-      {/* Left Side - Login Form */}
       <div className="flex flex-col justify-center items-center p-6 sm:p-12">
         <div className="w-full max-w-md space-y-8">
-          {/* Logo and Welcome Message */}
           <div className="text-center mb-8">
             <div className="flex flex-col items-center gap-2 group">
               <div
@@ -95,9 +90,7 @@ const LoginPage = () => {
             </div>
           </div>
 
-          {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6" aria-label="Login form">
-            {/* Email Input */}
             <div className="form-control">
               <label className="label" htmlFor="email">
                 <span className="label-text font-medium">Email</span>
@@ -121,7 +114,6 @@ const LoginPage = () => {
               </div>
             </div>
 
-            {/* Password Input: Allows user to enter their password. Includes toggle for visibility. */}
             <div className="form-control">
               <label className="label" htmlFor="password">
                 <span className="label-text font-medium">Password</span>
@@ -158,14 +150,12 @@ const LoginPage = () => {
               </div>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="text-center text-red-500 text-sm font-medium" role="alert">
                 {error}
               </div>
             )}
 
-            {/* Submit Button */}
             <button
               type="submit"
               className="btn btn-primary w-full"
@@ -182,10 +172,17 @@ const LoginPage = () => {
             </button>
           </form>
 
-          {/* Signup Link */}
           <div className="text-center">
             <p className="text-base-content/60">
-              Don&apos;t have an account?{' '}
+              <a href="#" className="link link-primary" onClick={(e) => {e.preventDefault(); setShowForgotPasswordModal(true);}}>
+                Forgot Password?
+              </a>
+            </p>
+          </div>
+
+          <div className="text-center">
+            <p className="text-base-content/60">
+              Don&apos;t have an account?{" "}
               <Link to="/signup" className="link link-primary">
                 Create account
               </Link>
@@ -194,11 +191,55 @@ const LoginPage = () => {
         </div>
       </div>
 
-      {/* Right Side - Decorative Image/Pattern */}
       <AuthImagePattern
         title={"Welcome back!"}
         subtitle={"Sign in to continue your conversations and catch up with your messages."}
       />
+
+      {showForgotPasswordModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-base-100 text-base-content p-6 rounded-lg w-full max-w-md shadow-lg relative">
+            <button
+              type="button"
+              className="absolute top-3 right-3 text-base-content hover:text-error focus:outline-none"
+              aria-label="Close modal"
+              onClick={() => setShowForgotPasswordModal(false)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h2 className="text-xl font-semibold mb-4">Forgot Password</h2>
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="forgot-password-email">Email</label>
+                <input
+                  id="forgot-password-email"
+                  type="email"
+                  required
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  className="input input-bordered w-full"
+                  placeholder="Enter your email"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setShowForgotPasswordModal(false)}
+                  disabled={isSendingPasswordReset}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={isSendingPasswordReset}>
+                  {isSendingPasswordReset ? 'Sending...' : 'Send Reset Link'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

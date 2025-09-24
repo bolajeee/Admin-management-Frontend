@@ -13,6 +13,8 @@ import SettingsPage from './pages/SettingsPage';
 import ProfilePage from './pages/ProfilePage';
 import SignUpPage from './pages/SignupPage';
 
+import ResetPasswordPage from './pages/ResetPasswordPage';
+
 // Admin Pages
 import AdminLayout from './components/admin/AdminLayout';
 import AdminRoute from './components/admin/AdminRoute';

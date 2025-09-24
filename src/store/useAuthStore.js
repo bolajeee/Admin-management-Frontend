@@ -116,6 +116,21 @@ export const useAuthStore = create(
         }
       },
 
+      changePassword: async ({ currentPassword, newPassword }) => {
+        try {
+          const res = await axiosInstance.post("/auth/changePassword", {
+            currentPassword,
+            newPassword,
+          });
+          toast.success(res.data?.message || "Password changed successfully");
+          return true;
+        } catch (error) {
+          const message = error.response?.data?.message || "Failed to change password.";
+          toast.error(message);
+          throw new Error(message);
+        }
+      },
+
       deleteUser: async (userId) => {
         set({ isDeletingUser: true });
         try {

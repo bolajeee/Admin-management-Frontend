@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { Camera, Mail, User } from "lucide-react";
 import toast from "react-hot-toast";
+import PasswordChangeForm from "../components/PasswordChangeForm";
+
 
 
 /**
@@ -15,7 +17,11 @@ import toast from "react-hot-toast";
  */
 const ProfilePage = () => {
   // Get user info and update actions from auth store
-  const { authUser, isUpdatingProfile, updateProfile } = useAuthStore();
+  const { authUser, isUpdatingProfile, updateProfile, isCheckingAuth, checkAuth } = useAuthStore();
+  // Fetch user data on mount
+  useEffect(() => {
+    checkAuth();
+  }, []);
   // State for previewing selected image
   const [selectedImg, setSelectedImg] = useState(null);
 
@@ -32,6 +38,14 @@ const ProfilePage = () => {
     formData.append("profilePic", file);
     updateProfile(formData);
   };
+
+  if (isCheckingAuth || !authUser) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen pt-20">
@@ -106,6 +120,12 @@ const ProfilePage = () => {
                 <span>Account Status</span>
                 <span className="text-green-500">Active</span>
               </div>
+            </div>
+
+            {/* Password Change Section */}
+            <div className="mt-8">
+              <h2 className="text-lg font-medium mb-2">Change Password</h2>
+              <PasswordChangeForm />
             </div>
           </div>
         </div>
