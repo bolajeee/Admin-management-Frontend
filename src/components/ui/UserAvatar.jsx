@@ -1,16 +1,5 @@
 import React from 'react';
 
-/**
- * UserAvatar component
- * @param {object} props
- * @param {object} props.user - The user object (must have at least _id, name/email, and optionally profilePicture, role)
- * @param {string} [props.size] - Tailwind size classes (e.g., 'w-8 h-8')
- * @param {string} [props.textSize] - Tailwind text size (e.g., 'text-xs')
- * @param {boolean} [props.showTooltip] - If true, show tooltip on hover (for cards/lists)
- * @param {function} [props.onClick] - If provided, called on click (for modals/details to open sidebar)
- * @param {boolean} [props.fallback] - If true, show fallback avatar for missing user; otherwise, render nothing
- * @param {number} [props.tooltipZIndex] - Z-index for tooltip (default 100)
- */
 export default function UserAvatar({ user, size = 'w-8 h-8', textSize = 'text-xs', showTooltip = false, onClick, fallback = false, tooltipZIndex = 100 }) {
     if (!user) {
         if (fallback) {
@@ -27,7 +16,7 @@ export default function UserAvatar({ user, size = 'w-8 h-8', textSize = 'text-xs
         .slice(0, 2);
     const avatar = user.profilePicture && user.profilePicture.trim() !== ''
         ? <img src={user.profilePicture} alt={user.name || user.email || 'User'} className={`${size} rounded-full border-2 border-primary`} />
-        : <div className={`${size} rounded-full border-2 border-primary bg-base-300 flex items-center justify-center ${textSize} font-bold text-primary`}>{initials}</div>;
+        : <div className={`${size} rounded-full border-2 border-primary bg-base-300 flex items-center justify-center ${textSize} font-bold text-primary`}>{user.name ? initials : user.email ? user.email.charAt(0).toUpperCase() : 'U'}</div>;
 
     // Tooltip content
     const tooltipContent = (

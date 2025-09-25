@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Select from 'react-select';
 import { 
   X, Calendar, Tag, FileText, Users, 
   Repeat, Paperclip, MessageSquare, Link
@@ -60,10 +61,16 @@ export default function TaskModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    const dataToSend = {
+      ...formData,
+      recurrence: formData.recurrence,
+    };
+    onSubmit(dataToSend);
   };
 
   if (!show) return null;
+
+  const userOptions = users.map(user => ({ value: user._id, label: user.name || user.email }));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -193,18 +200,14 @@ export default function TaskModal({
               <label className="label">
                 <span className="label-text font-medium">Assigned To</span>
               </label>
-              <select
-                className="select select-bordered w-full"
-                value={formData.assignedTo?.[0] || ''}
-                onChange={e => setFormData(f => ({ ...f, assignedTo: [e.target.value] }))}
-              >
-                <option value="">Select Assignee</option>
-                {users.map(user => (
-                  <option key={user._id} value={user._id}>
-                    {user.name || user.email}
-                  </option>
-                ))}
-              </select>
+              <Select
+                isMulti
+                options={userOptions}
+                value={userOptions.filter(option => formData.assignedTo.includes(option.value))}
+                onChange={selectedOptions => setFormData(f => ({ ...f, assignedTo: selectedOptions.map(option => option.value) }))}
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
             </div>
 
             <div>
@@ -231,38 +234,7 @@ export default function TaskModal({
                 onChange={e => setFormData(f => ({ ...f, category: e.target.value }))}
               />
               <div className="space-y-4">
-                <div>
-                  <label className="label">
-                    <span className="label-text font-medium">Recurrence</span>
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <select
-                      className="select select-bordered w-full"
-                      value={formData.recurrence?.frequency || 'none'}
-                      onChange={e => setFormData(f => ({
-                        ...f,
-                        recurrence: { ...f.recurrence, frequency: e.target.value }
-                      }))}
-                    >
-                      <option value="none">No Recurrence</option>
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                    </select>
-                    {formData.recurrence?.frequency !== 'none' && (
-                      <input
-                        type="date"
-                        className="input input-bordered w-full"
-                        value={formData.recurrence?.endDate ? new Date(formData.recurrence.endDate).toISOString().split('T')[0] : ''}
-                        onChange={e => setFormData(f => ({
-                          ...f,
-                          recurrence: { ...f.recurrence, endDate: e.target.value }
-                        }))}
-                        placeholder="End Date"
-                      />
-                    )}
-                  </div>
-                </div>
+                {/* Recurrence logic removed for later implementation */}
               </div>
             </div>
 

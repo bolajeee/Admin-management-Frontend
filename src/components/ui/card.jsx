@@ -38,3 +38,11 @@ export function CardContent({ children, className = "", ...props }) {
         </div>
     );
 }
+
+export function CardFooter({ children, className = "", ...props }) {
+    return (
+        <div className={`border-t pt-4 mt-4 border-base-300 ${className}`} {...props}>
+            {children}
+        </div>
+    );
+}

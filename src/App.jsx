@@ -38,7 +38,7 @@ const RequireAuth = ({ children }) => {
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
-   const { initializeTheme, theme } = useThemeStore();
+   const { initializeTheme } = useThemeStore();
 
     useEffect(() => {
         initializeTheme();
@@ -46,7 +46,8 @@ const App = () => {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  },
+   []);
 
   if (isCheckingAuth) {
     return (
@@ -57,7 +58,7 @@ const App = () => {
   }
 
   return (
-    <div data-theme={theme}>
+    <>
       <Navbar />  
       <Routes>
         {/* Public Routes */}
@@ -123,7 +124,7 @@ const App = () => {
       </Routes>
 
       <Toaster />
-    </div>
+    </>
   );
 };
 

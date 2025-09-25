@@ -4,6 +4,7 @@ import ChatHeader from './ChatHeader'
 import { useChatStore } from '../store/useChatStore.js'
 import { useAuthStore } from '../store/useAuthStore.js'
 import { useThemeStore } from '../store/useThemeStore.js'
+import { Card, CardContent } from './ui/card.jsx'
 
 const ChatContainer = ({ showHeader = true }) => {
   const { getMessages, isMessagesLoading, selectedUser, messages, sendMessage } = useChatStore()
@@ -83,8 +84,8 @@ const ChatContainer = ({ showHeader = true }) => {
                 )}
 
                 {/* Message Bubble */}
-                <div className={`max-w-[75%] sm:max-w-[65%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                  <div
+                <Card className={`max-w-[75%] sm:max-w-[65%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                  <CardContent
                     className={`rounded-2xl px-5 py-3 shadow-md break-words whitespace-pre-wrap border ${isOwn
                       ? theme === 'dark'
                         ? 'bg-primary text-primary-content border-primary/60'
@@ -104,7 +105,7 @@ const ChatContainer = ({ showHeader = true }) => {
                         onError={(e) => { e.target.style.display = 'none'; }}
                       />
                     )}
-                  </div>
+                  </CardContent>
 
                   {/* Timestamp and Sender */}
                   <div className={`flex gap-3 text-xs mt-2 ${isOwn ? 'justify-end' : 'justify-start'} w-full`}>
@@ -115,7 +116,7 @@ const ChatContainer = ({ showHeader = true }) => {
                       {isOwn ? 'You' : msg.senderName || 'User'}
                     </span>
                   </div>
-                </div>
+                </Card>
 
                 {/* Avatar Right */}
                 {isOwn && (

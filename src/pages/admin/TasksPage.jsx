@@ -3,6 +3,7 @@ import { useThemeStore } from '../../store/useThemeStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useTaskStore } from '../../store/useTaskStore';
 import { useChatStore } from '../../store/useChatStore';
+import KanbanBoard from '../../components/tasks/KanbanBoard';
 import TaskModal from '../../components/modals/TaskModal';
 import UserAvatar from '../../components/ui/UserAvatar';
 // Placeholder imports for modals/components
@@ -31,8 +32,9 @@ export default function TasksPage() {
   const [filters, setFilters] = useState({ status: '', priority: '', assignee: '', category: '' });
   const [selectedTask, setSelectedTask] = useState(null);
   const [userInfoSidebar, setUserInfoSidebar] = useState(null); // For showing user info sidebar
-  // Remove userInfoModal state, restore userInfoSidebar
-  // const [userInfoModal, setUserInfoModal] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const categories = [...new Set(tasks.map(task => task.category).filter(Boolean))];
 
   useEffect(() => {
     getTasks(filters);
@@ -120,84 +122,129 @@ export default function TasksPage() {
     setUserInfoSidebar(null);
   };
 
+  const onDragEnd = async (result) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) return;
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    const draggedTask = tasks.find(task => task._id === draggableId);
+    if (!draggedTask) return;
+
+    // Optimistic UI update
+    const updatedTasks = tasks.map(task =>
+      task._id === draggableId
+        ? { ...task, status: destination.droppableId }
+        : task
+    );
+    useTaskStore.setState({ tasks: updatedTasks });
+
+    try {
+      await updateTaskStatus(draggedTask._id, destination.droppableId);
+    } catch (error) {
+      console.error('Failed to update task status:', error);
+      // Revert the optimistic update on error
+      useTaskStore.setState({ tasks });
+    }
+  };
+
   return (
-    <div data-theme={theme} className="min-h-screen p-6 bg-base-200">
-      {/* Section: Header and New Task Button */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-primary">Tasks</h1>
-        <button
-          className="btn btn-primary px-6 py-2 rounded-full shadow font-medium"
-          onClick={handleOpenCreate}
-          title="Create a new task"
-        >
-          + New Task
-        </button>
-      </div>
-      {/* Section: Filters and Search */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6 bg-base-100 rounded-lg p-4 shadow-sm items-center">
-        <input
-          type="text"
-          placeholder="Search tasks..."
-          value={search}
-          onChange={handleSearch}
-          className="input input-bordered w-full md:w-1/3"
-        />
-        <select
-          className="select select-bordered"
-          value={filters.status}
-          onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
-        >
-          <option value="">All Statuses</option>
-          <option value="todo">To Do</option>
-          <option value="in_progress">In Progress</option>
-          <option value="completed">Completed</option>
-          <option value="blocked">Blocked</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-        <select
-          className="select select-bordered"
-          value={filters.priority}
-          onChange={e => setFilters(f => ({ ...f, priority: e.target.value }))}
-        >
-          <option value="">All Priorities</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-          <option value="urgent">Urgent</option>
-        </select>
-        <input
-          type="text"
-          placeholder="Category"
-          className="input input-bordered"
-          value={filters.category}
-          onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
-        />
-        {/* Quick filter: My Tasks */}
-        <button
-          className={`btn btn-xs ${filters.assignee === authUser?._id ? 'btn-primary' : 'btn-outline'}`}
-          onClick={() => setFilters(f => ({ ...f, assignee: f.assignee === authUser?._id ? '' : authUser?._id }))}
-          title="Show only tasks assigned to me"
-        >
-          My Tasks
-        </button>
-      </div>
-      {/* Floating New Task Button (mobile) */}
-      <button
-        className="btn btn-primary fixed bottom-6 right-6 z-40 shadow-lg rounded-full md:hidden"
-        onClick={handleOpenCreate}
-        title="Create a new task"
-      >
-        +
-      </button>
-      {/* Section: Task List */}
-      <div className="bg-base-100 rounded-lg shadow p-6">
-        {isTasksLoading ? (
-          <div className="text-base-content/70">Loading tasks...</div>
-        ) : tasks.length === 0 ? (
-          <p className="text-base-content/70">No tasks found.</p>
-        ) : (
-          <KanbanBoard tasks={tasks} onDragEnd={onDragEnd} users={users} getUserById={getUserById} onViewTask={setSelectedTask} />
+    <div data-theme={theme} className="min-h-screen bg-base-200">
+      <div className="p-6">
+        {/* Section: Header and New Task Button */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-primary">Tasks</h1>
+          <div className="flex items-center">
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              {showFilters ? 'Hide' : 'Show'} Filters
+            </button>
+            <button
+              className="btn btn-primary px-6 py-2 rounded-full shadow font-medium ml-4 inline-flex"
+              onClick={handleOpenCreate}
+              title="Create a new task"
+            >
+              + New Task
+            </button>
+          </div>
+        </div>
+        {/* Section: Filters and Search */}
+        {showFilters && (
+          <div className="flex flex-col md:flex-row gap-4 mb-6 bg-base-100 rounded-lg p-4 shadow-sm items-center">
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={search}
+              onChange={handleSearch}
+              className="input input-bordered w-full md:w-1/3"
+            />
+            <select
+              className="select select-bordered"
+              value={filters.status}
+              onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
+            >
+              <option value="">All Statuses</option>
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="blocked">Blocked</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <select
+              className="select select-bordered"
+              value={filters.priority}
+              onChange={e => setFilters(f => ({ ...f, priority: e.target.value }))}
+            >
+              <option value="">All Priorities</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+            <select
+              className="select select-bordered"
+              value={filters.category}
+              onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
+            >
+              <option value="">All Categories</option>
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+            {/* Quick filter: My Tasks */}
+            <button
+              className={`btn btn-xs ${filters.assignee === authUser?._id ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setFilters(f => ({ ...f, assignee: f.assignee === authUser?._id ? '' : authUser?._id }))}
+              title="Show only tasks assigned to me"
+            >
+              My Tasks
+            </button>
+            <button
+              className="btn btn-xs btn-ghost"
+              onClick={() => setFilters({ status: '', priority: '', assignee: '', category: '' })}
+            >
+              Clear Filters
+            </button>
+          </div>
         )}
+        {/* Section: Task List */}
+        <div className="bg-base-100 rounded-lg shadow">
+          {isTasksLoading ? (
+            <div className="text-base-content/70 p-6">Loading tasks...</div>
+          ) : tasks.length === 0 ? (
+            <p className="text-base-content/70 p-6">No tasks found.</p>
+          ) : (
+            <KanbanBoard tasks={tasks} onDragEnd={onDragEnd} users={users} getUserById={getUserById} onViewTask={setSelectedTask} />
+          )}
+        </div>
       </div>
       {/* TaskModal for creating or editing a task */}
       <TaskModal
@@ -208,7 +255,7 @@ export default function TasksPage() {
           setSubmittingTask(false); // Reset loading state when modal is closed
         }}
         onSubmit={modalMode === 'create' ? handleCreateTask : handleEditTask}
-        submitting={submittingTask}
+        submitting={submittingTask || taskActionLoading.create || taskActionLoading[modalTask?._id]}
         initialTask={modalTask || {}}
         users={users}
         mode={modalMode}
