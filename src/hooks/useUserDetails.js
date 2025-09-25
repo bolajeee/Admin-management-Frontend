@@ -20,7 +20,7 @@ export function useUserDetails(users) {
         setDetailsModalOpen(true);
         setDetailsLoading(true);
         try {
-            const res = await fetch(`/api/messages/user/${user._id}/stats`);
+            const res = await fetch(`/api/admin/users/${user._id}/stats`);
             const data = await res.json();
             setUserStats({
                 messages: data.totalMessages || 0,
@@ -39,7 +39,7 @@ export function useUserDetails(users) {
         if (!detailsUser) return;
         try {
             setDetailsLoading(true);
-            await fetch(`/api/users/${detailsUser._id}/toggle-active`, { method: 'PATCH' });
+            await fetch(`/api/admin/users/${detailsUser._id}/toggle-active`, { method: 'PATCH' });
             toast.success(`User ${detailsUser.isActive ? 'deactivated' : 'activated'}!`);
             setDetailsUser({ ...detailsUser, isActive: !detailsUser.isActive });
         } catch {
@@ -53,7 +53,7 @@ export function useUserDetails(users) {
         if (!detailsUser) return;
         try {
             setDetailsLoading(true);
-            await fetch(`/api/users/${detailsUser._id}/reset-password`, { method: 'POST' });
+            await fetch(`/api/admin/users/${detailsUser._id}/reset-password`, { method: 'POST' });
             toast.success('Password reset email sent!');
         } catch {
             toast.error('Failed to reset password.');
