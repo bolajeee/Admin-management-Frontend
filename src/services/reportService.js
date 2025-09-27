@@ -62,6 +62,17 @@ const reportService = {
       console.error('Error exporting report:', error);
       throw error;
     }
+  },
+
+  // Delete a report
+  deleteReport: async (reportId) => {
+    try {
+      const response = await axiosInstance.delete(`/reports/uploaded-reports/${reportId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      throw error;
+    }
   }
 };
 

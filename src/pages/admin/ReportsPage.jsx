@@ -6,7 +6,7 @@ import { useReportStore } from '../../store/useReportStore';
 import { axiosInstance } from '../../lib/axios';
 import { Button, Spin, Empty } from 'antd';
 import { FileOutlined, ArrowLeftOutlined, UploadOutlined, ReloadOutlined } from '@ant-design/icons';
-import { RefreshCw, Download } from 'lucide-react';
+import { RefreshCw, Download, Trash2 } from 'lucide-react';
 import ThemeWrapper from '../../components/ThemeWrapper';
 import UploadReportForm from '../../components/reports/UploadReportForm';
 import ReportViewer from '../../components/reports/ReportViewer';
@@ -83,8 +83,17 @@ function ReportsPage() {
     }
   };
 
+  const { deleteReport } = useReportStore();
+
   const handleSelectReport = (report) => {
     selectReport(report.id || report._id);
+  };
+
+  const handleDeleteReport = (e, reportId) => {
+    e.stopPropagation(); // Prevent card click event
+    if (window.confirm('Are you sure you want to delete this report?')) {
+      deleteReport(reportId);
+    }
   };
 
   const handleBackToReports = () => {
@@ -213,7 +222,13 @@ function ReportsPage() {
                   className="cursor-pointer transition-all hover:shadow-md hover:translate-y-[-2px]"
                   onClick={() => handleSelectReport(report)}
                 >
-                  <CardContent className="p-4">
+                  <CardContent className="p-4 relative">
+                    <button 
+                      className="absolute top-2 right-2 p-1 rounded-full bg-base-100 hover:bg-base-300 transition-colors z-10"
+                      onClick={(e) => handleDeleteReport(e, report.id || report._id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-error" />
+                    </button>
                     <div className="flex items-center gap-3">
                       <div className="p-3 rounded-full bg-base-200 text-primary">
                         <FileOutlined style={{ fontSize: '24px' }} />

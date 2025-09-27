@@ -81,5 +81,23 @@ export const useReportStore = create((set, get) => ({
   // Clear report data
   clearReportData: () => {
     set({ reportData: null, selectedReport: null });
-  }
+  },
+
+  // Delete a report
+  deleteReport: async (reportId) => {
+    set({ isLoading: true, error: null });
+    try {
+      await reportService.deleteReport(reportId);
+      toast.success('Report deleted successfully');
+      set((state) => ({
+        uploadedReports: state.uploadedReports.filter((report) => report.id !== reportId && report._id !== reportId),
+      }));
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to delete report';
+      set({ error: errorMessage });
+      toast.error(errorMessage);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
 }));
