@@ -164,6 +164,7 @@ const SettingsPanel = ({ isAdmin = false }) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              {/* Defensive checks for settings.system */}
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-medium">Automatic User Cleanup</h3>
@@ -172,8 +173,9 @@ const SettingsPanel = ({ isAdmin = false }) => {
                 <input
                   type="checkbox"
                   className="toggle toggle-primary"
-                  checked={settings.system.autoUserCleanup}
-                  onChange={() => updateSetting('system', 'autoUserCleanup', !settings.system.autoUserCleanup)}
+                  checked={settings.system?.autoUserCleanup || false}
+                  onChange={() => updateSetting('system', 'autoUserCleanup', !(settings.system?.autoUserCleanup))}
+                  disabled={!settings.system}
                 />
               </div>
 
@@ -185,8 +187,9 @@ const SettingsPanel = ({ isAdmin = false }) => {
                 <input
                   type="checkbox"
                   className="toggle toggle-primary"
-                  checked={settings.system.dailyBackups}
-                  onChange={() => updateSetting('system', 'dailyBackups', !settings.system.dailyBackups)}
+                  checked={settings.system?.dailyBackups || false}
+                  onChange={() => updateSetting('system', 'dailyBackups', !(settings.system?.dailyBackups))}
+                  disabled={!settings.system}
                 />
               </div>
 
@@ -198,8 +201,9 @@ const SettingsPanel = ({ isAdmin = false }) => {
                 <input
                   type="checkbox"
                   className="toggle toggle-error"
-                  checked={settings.system.maintenanceMode}
-                  onChange={() => updateSetting('system', 'maintenanceMode', !settings.system.maintenanceMode)}
+                  checked={settings.system?.maintenanceMode || false}
+                  onChange={() => updateSetting('system', 'maintenanceMode', !(settings.system?.maintenanceMode))}
+                  disabled={!settings.system}
                 />
               </div>
             </div>

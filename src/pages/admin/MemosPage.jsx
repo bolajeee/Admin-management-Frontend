@@ -55,7 +55,7 @@ const getMemoStatusProps = (memo, snoozeAck) => {
     },
     deleted: {
       border: 'border-red-400',
-      bg: 'bg-red-50 opacity-60',
+      bg: 'bg-red-100 opacity-60',
       icon: <Trash2 className="text-red-500 w-4 h-4" />,
       label: 'Deleted',
       text: 'text-red-700',
@@ -409,10 +409,13 @@ export default function MemosPage() {
             <ul className="space-y-3">
               {companyMemos.map((memo) => {
                 const isAcknowledged = acknowledgedMemos.includes(memo.id) || (memo.acknowledgments && memo.acknowledgments.some(a => a.user === authUser?._id && a.status === 'acknowledged'));
-                const isCreator = authUser && memo.createdBy && (memo.createdBy._id === authUser._id || memo.createdBy === authUser._id);
+                const isAdmin = authUser?.role === 'admin' || authUser?.role?.name === 'admin';
+                const isCreator = memo.createdBy === authUser?._id || (typeof memo.createdBy === 'object' && memo.createdBy?._id === authUser?._id);
+                const isDeleted = memo.status === 'deleted';
+                const canDelete = isAdmin || (isCreator && !isDeleted);
                 const snoozeAck = memo.acknowledgments && memo.acknowledgments.find(a => a.user === authUser?._id && a.status === 'snoozed');
                 const statusProps = getMemoStatusProps(memo, snoozeAck);
-                const isDeleted = memo.status === 'deleted';
+
                 return (
                   <li key={memo.id} className={`p-4 rounded-lg border shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1 ${statusProps.bg} ${statusProps.border} ${isDeleted ? 'opacity-60 pointer-events-none' : ''}`}>
                     <div className="flex items-center gap-3 mb-1">
@@ -449,7 +452,7 @@ export default function MemosPage() {
                           {snoozing ? '...' : 'Snooze'}
                         </button>
                       )}
-                      {isCreator && !isDeleted && (
+                      {canDelete && (
                         <>
                           <button
                             className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-error/10 text-error border border-error/20 hover:bg-error/20 transition disabled:opacity-50"
@@ -461,7 +464,7 @@ export default function MemosPage() {
                           <select
                             className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold border border-base-300 bg-base-100 disabled:opacity-50"
                             value={memo.status}
-                            disabled={statusUpdating[memo.id]}
+                            disabled={statusUpdating[memo.id] || isDeleted}
                             onChange={e => handleStatusChange(memo.id, e.target.value)}
                           >
                             <option value="active">Active</option>
@@ -519,10 +522,11 @@ export default function MemosPage() {
                         <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">Read</span>
                       ) : (
                         <button
-                          className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition"
+                          className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition disabled:opacity-50"
                           onClick={() => markMemoAsRead(memo.id, authUser?._id)}
+                          disabled={memoActionLoading[memo.id]}
                         >
-                          Mark as Read
+                          {memoActionLoading[memo.id] ? '...' : 'Mark as Read'}
                         </button>
                       )}
                       {isCreator && (
@@ -582,13 +586,19 @@ export default function MemosPage() {
         snoozing={snoozing}
       />
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-base-100 p-6 rounded-xl shadow-lg w-[90%] max-w-sm flex flex-col gap-4">
-            <h2 className="text-lg font-bold">Delete Memo</h2>
-            <p>Do you want to delete this memo for everyone or only for you?</p>
-            <div className="flex gap-2 justify-end">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-base-100 p-6 rounded-2xl shadow-xl w-[90%] max-w-md flex flex-col gap-4 border border-base-300">
+            <div className="flex items-center gap-3">
+              <div className="bg-error/10 p-2 rounded-full">
+                <Trash2 className="w-6 h-6 text-error" />
+              </div>
+              <h2 className="text-xl font-bold">Delete Memo</h2>
+            </div>
+            <p className="text-base-content/80">Are you sure you want to delete this memo? This action cannot be undone.</p>
+            <p className="text-sm text-base-content/60">You can delete it just for yourself or for everyone if you are an admin.</p>
+            <div className="flex flex-col sm:flex-row gap-2 justify-end mt-4">
               <button
-                className="btn btn-error"
+                className="btn btn-error w-full sm:w-auto"
                 onClick={() => {
                   deleteMemoGlobal(deleteTargetMemoId, authUser?._id).then(() => {
                     getMemos();
@@ -601,7 +611,7 @@ export default function MemosPage() {
                 Delete for everyone
               </button>
               <button
-                className="btn btn-secondary"
+                className="btn btn-secondary w-full sm:w-auto"
                 onClick={() => {
                   deleteMemo(deleteTargetMemoId, authUser?._id).then(() => {
                     getMemos();
@@ -614,7 +624,7 @@ export default function MemosPage() {
                 Delete for only me
               </button>
               <button
-                className="btn"
+                className="btn btn-ghost w-full sm:w-auto"
                 onClick={() => {
                   setShowDeleteModal(false);
                   setDeleteTargetMemoId(null);
