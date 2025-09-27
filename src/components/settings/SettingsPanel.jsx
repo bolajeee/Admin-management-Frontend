@@ -5,7 +5,7 @@ import { THEMES, THEME_COLORS } from '../../constants';
 import { useSettings } from '../../hooks/useSettings';
 import { Check, Moon, Sun, RefreshCw, AlertCircle } from 'lucide-react';
 
-const SettingsPanel = ({ isAdmin = false }) => {
+const SettingsPanel = ({ isAdmin = false, userId = null, initialSettings = null }) => {
   const { theme, setTheme } = useThemeStore();
   const {
     settings,
@@ -15,7 +15,7 @@ const SettingsPanel = ({ isAdmin = false }) => {
     error,
     isSaving,
     saveSuccess
-  } = useSettings();
+  } = useSettings({ userId, initialSettings });
   const handleThemeChange = (newTheme) => {
     setTheme(newTheme);
   };
@@ -86,8 +86,9 @@ const SettingsPanel = ({ isAdmin = false }) => {
               <input
                 type="checkbox"
                 className="toggle toggle-primary"
-                checked={settings.notifications.email}
-                onChange={() => updateSetting('notifications', 'email', !settings.notifications.email)}
+                checked={settings.notifications?.email || false}
+                onChange={() => updateSetting('notifications', 'email', !(settings.notifications?.email))}
+                disabled={!settings.notifications}
               />
             </div>
 
@@ -99,8 +100,9 @@ const SettingsPanel = ({ isAdmin = false }) => {
               <input
                 type="checkbox"
                 className="toggle toggle-primary"
-                checked={settings.notifications.browser}
-                onChange={() => updateSetting('notifications', 'browser', !settings.notifications.browser)}
+                checked={settings.notifications?.browser || false}
+                onChange={() => updateSetting('notifications', 'browser', !(settings.notifications?.browser))}
+                disabled={!settings.notifications}
               />
             </div>
 
@@ -112,8 +114,9 @@ const SettingsPanel = ({ isAdmin = false }) => {
               <input
                 type="checkbox"
                 className="toggle toggle-primary"
-                checked={settings.notifications.sms}
-                onChange={() => updateSetting('notifications', 'sms', !settings.notifications.sms)}
+                checked={settings.notifications?.sms || false}
+                onChange={() => updateSetting('notifications', 'sms', !(settings.notifications?.sms))}
+                disabled={!settings.notifications}
               />
             </div>
           </div>
@@ -135,8 +138,9 @@ const SettingsPanel = ({ isAdmin = false }) => {
               <input
                 type="checkbox"
                 className="toggle toggle-primary"
-                checked={settings.privacy.showOnlineStatus}
-                onChange={() => updateSetting('privacy', 'showOnlineStatus', !settings.privacy.showOnlineStatus)}
+                checked={settings.privacy?.showOnlineStatus || false}
+                onChange={() => updateSetting('privacy', 'showOnlineStatus', !(settings.privacy?.showOnlineStatus))}
+                disabled={!settings.privacy}
               />
             </div>
 
@@ -148,8 +152,9 @@ const SettingsPanel = ({ isAdmin = false }) => {
               <input
                 type="checkbox"
                 className="toggle toggle-primary"
-                checked={settings.privacy.showReadReceipts}
-                onChange={() => updateSetting('privacy', 'showReadReceipts', !settings.privacy.showReadReceipts)}
+                checked={settings.privacy?.showReadReceipts ?? false}
+                onChange={() => updateSetting('privacy', 'showReadReceipts', !(settings.privacy?.showReadReceipts ?? false))}
+                disabled={!settings.privacy}
               />
             </div>
           </div>

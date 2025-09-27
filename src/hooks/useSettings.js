@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { axiosInstance } from '../lib/axios';
 import { useAuthStore } from '../store/useAuthStore';
+import toast from 'react-hot-toast';
 
-export function useSettings() {
+export function useSettings({ userId = null, initialSettings = null } = {}) {
   const authUser = useAuthStore((state) => state.authUser);
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState(initialSettings || {
     notifications: {
       email: true,
       browser: true,
@@ -20,32 +21,29 @@ export function useSettings() {
       maintenanceMode: false
     }
   });
-  
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!initialSettings);
   const [error, setError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Fetch user settings
+  // Fetch user settings (only if not provided)
   useEffect(() => {
-    if (!authUser) return;
-    
+    if (!authUser || initialSettings) return;
     const fetchSettings = async () => {
       setIsLoading(true);
       try {
-        // This endpoint would need to be implemented in the backend
-        const response = await axiosInstance.get('/users/settings');
+        const response = await axiosInstance.get('/settings');
         setSettings(response.data || settings);
       } catch (error) {
         console.error("Failed to fetch settings:", error);
         setError("Failed to load your settings. Please try again later.");
+        toast.error("Failed to load your settings.");
       } finally {
         setIsLoading(false);
       }
     };
-    
     fetchSettings();
-  }, [authUser]);
+  }, [authUser, initialSettings]);
 
   // Update a specific setting
   const updateSetting = (category, setting, value) => {
@@ -60,20 +58,29 @@ export function useSettings() {
 
   // Save all settings
   const saveSettings = async () => {
-    if (!authUser) return;
-    
+    if (!authUser && !userId) return;
     setIsSaving(true);
     setError(null);
     setSaveSuccess(false);
-    
+    const toastId = toast.loading('Saving settings...');
     try {
-      // This endpoint would need to be implemented in the backend
-      await axiosInstance.put('/users/settings', settings);
+      // Only send allowed keys for user settings
+      const allowed = ['notifications', 'privacy'];
+      const payload = Object.fromEntries(
+        Object.entries(settings).filter(([key]) => allowed.includes(key))
+      );
+      if (userId) {
+        await axiosInstance.patch(`/settings/${userId}`, payload);
+      } else {
+        await axiosInstance.patch('/settings', payload);
+      }
       setSaveSuccess(true);
+      toast.success('Settings saved successfully!', { id: toastId });
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error("Failed to save settings:", error);
       setError("Failed to save your settings. Please try again later.");
+      toast.error("Failed to save your settings.", { id: toastId });
     } finally {
       setIsSaving(false);
     }
