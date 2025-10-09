@@ -7,15 +7,9 @@ import ChatContainer from "../components/ChatContainer";
 import UserMemosPanel from "../components/UserMemosPanel";
 import UserTasksPanel from "../components/UserTasksPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import TabButton from "../components/ui/TabButton";
 
-const TabButton = ({ active, onClick, children }) => (
-    <button
-        className={`flex-1 py-2 px-4 text-sm font-medium text-center rounded-t-lg transition-colors duration-200 ${active ? 'bg-primary text-primary-foreground' : 'bg-base-200 hover:bg-base-300'}`}
-        onClick={onClick}
-    >
-        {children}
-    </button>
-);
+// TODO: Move activeTab and isSidebarOpen to a global state manager like Zustand or Redux
 
 const HomePage = () => {
     const { selectedUser } = useChatStore();
@@ -54,7 +48,7 @@ const HomePage = () => {
                         </div>
 
                         {/* Right Panel with Tabs */}
-                        <div className="w-[380px] border-l border-base-300 bg-base-100 flex flex-col">
+                        <div className="w-full md:w-[380px] border-l border-base-300 bg-base-100 flex flex-col">
                             <div className="flex border-b border-base-300">
                                 <TabButton active={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')}>
                                     <div className="flex items-center justify-center gap-2">

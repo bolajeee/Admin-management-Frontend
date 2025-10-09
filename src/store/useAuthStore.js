@@ -24,39 +24,28 @@ export const useAuthStore = create(
         
         try {
           const res = await axiosInstance.get("/auth/check");
-          const user = res.data && typeof res.data === 'object' && res.data.role
-  ? { ...res.data, role: typeof res.data.role === 'string' ? res.data.role.trim() : res.data.role.name }
-  : res.data;
+          const user = res.data.data;
 
           set({ 
             authUser: user,
             isCheckingAuth: false 
           });
         } catch (error) {
-          console.error("Error in checkAuth:", error);
           set({ 
             authUser: null,
             isCheckingAuth: false 
           });
-          
-          // Only redirect to login if not already on login page
-          if (window.location.pathname !== '/login') {
-            window.location.href = "/login";
-          }
         }
       },
- 
 
       signUp: async (formData) => {
         set({ isSigningUp: true });
         try {
           const res = await axiosInstance.post("/auth/signup", formData);
-          // Trim role if present
-          const user = res.data && typeof res.data === 'object' && res.data.role ? { ...res.data, role: typeof res.data.role === 'string' ? res.data.role.trim() : res.data.role.name } : res.data;
+          const user = res.data.data;
           set({ authUser: user });
           toast.success("Signup successful");
         } catch (error) {
-          console.error("Error in signUp:", error.response?.data?.message);
           toast.error("Signup failed", error);
         } finally {
           set({ isSigningUp: false });
@@ -69,7 +58,6 @@ export const useAuthStore = create(
           set({ authUser: null });
           toast.success("Logout successful");
         } catch (error) {
-          console.error("Error in logout:", error);
           toast.error("Logout failed");
         }
       },
@@ -81,10 +69,7 @@ export const useAuthStore = create(
             withCredentials: true,
           });
 
-          const user =
-            res.data && typeof res.data === "object" && res.data.role
-              ? { ...res.data, role: res.data.role.trim() }
-              : res.data;
+          const user = res.data.data;
 
           set({ authUser: user });
           toast.success("Login successful");
@@ -92,7 +77,6 @@ export const useAuthStore = create(
         } catch (error) {
           const message =
             error.response?.data?.message || "Invalid credentials or server error.";
-          console.error("Error in login:", message);
           toast.error(message);
           return false;
         } finally {
@@ -104,12 +88,10 @@ export const useAuthStore = create(
         set({ isUpdatingProfile: true });
         try {
           const res = await axiosInstance.put("/auth/updateProfile", formData);
-          // Trim role if present
-          const user = res.data && typeof res.data === 'object' && res.data.role ? { ...res.data, role: res.data.role.trim() } : res.data;
+          const user = res.data.data;
           set({ authUser: user });
           toast.success("Profile updated successfully");
         } catch (error) {
-          console.error("Error in updateProfile:", error?.response?.data?.message || error.message);
           toast.error(error?.response?.data?.message || "Profile update failed");
         } finally {
           set({ isUpdatingProfile: false });
@@ -127,7 +109,7 @@ export const useAuthStore = create(
         } catch (error) {
           const message = error.response?.data?.message || "Failed to change password.";
           toast.error(message);
-          throw new Error(message);
+          return false;
         }
       },
 
@@ -140,7 +122,6 @@ export const useAuthStore = create(
           }));
           toast.success("User deleted successfully");
         } catch (error) {
-          console.error("Error in deleteUser:", error);
           toast.error("Failed to delete user");
           set({ isDeletingUser: false });
         }
