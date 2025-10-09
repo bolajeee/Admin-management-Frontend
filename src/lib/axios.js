@@ -1,8 +1,10 @@
 import axios from "axios"
 
 // Create axios instance with default config
+const baseURL = 'https://admin-management-backend.vercel.app/api';
+
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: baseURL,
   withCredentials: true, // This is important for sending cookies with requests
 });
 
