@@ -69,9 +69,10 @@ export const useAuthStore = create(
             withCredentials: true,
           });
 
-          const user = res.data.data;
+          const { user, token } = res.data.data;
 
           set({ authUser: user });
+          localStorage.setItem("token", token);
           toast.success("Login successful");
           return true;
         } catch (error) {

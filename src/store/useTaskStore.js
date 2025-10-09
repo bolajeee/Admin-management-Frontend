@@ -35,7 +35,7 @@ export const useTaskStore = create((set, get) => ({
         try {
             const res = await axiosInstance.get(`/tasks/getUserTasks/${userId}`);
             // Normalize _id for all user tasks
-            set({ userTasks: res.data.map(t => ({ ...t, _id: t._id || t.id })) });
+            set({ userTasks: res.data.data.map(t => ({ ...t, _id: t._id || t.id })) });
             toast.success("User tasks fetched successfully");
         } catch (error) {
             set({ userTasks: [] });

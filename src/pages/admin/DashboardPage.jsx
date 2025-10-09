@@ -20,7 +20,7 @@ import TaskModal from '../../components/modals/TaskModal';
 import { useTaskStore } from '../../store/useTaskStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useChatStore } from '../../store/useChatStore';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Cell, RadialBarChart, RadialBar } from 'recharts';
 import { Clock, User, CheckSquare, Bell, MessageSquare } from 'lucide-react';
 import ChartLoadingSkeleton from '../../components/skeletons/ChartLoadingSkeleton';
 
@@ -224,7 +224,7 @@ function DashboardPage() {
                 <ChartLoadingSkeleton />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={tasksCompletedData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <BarChart data={tasksCompletedData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--n))" />
                     <XAxis
                       dataKey="date"
@@ -249,15 +249,47 @@ function DashboardPage() {
                         day: 'numeric'
                       })}
                     />
-                    <Line
-                      type="monotone"
-                      dataKey="count"
-                      stroke="hsl(var(--p))"
-                      strokeWidth={3}
-                      dot={{ r: 4, fill: 'hsl(var(--p))' }}
-                      activeDot={{ r: 6, stroke: 'hsl(var(--p))', strokeWidth: 2 }}
+                    <Bar dataKey="count" fill="hsl(var(--p))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+
+          {/* Task Completion Rate Chart */}
+          <div className="bg-base-200 rounded-lg p-4">
+            <h3 className="text-lg font-medium mb-4">Task Completion Rate</h3>
+            <div className="h-80">
+              {analyticsLoading ? (
+                <ChartLoadingSkeleton />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadialBarChart 
+                    cx="50%" 
+                    cy="50%" 
+                    innerRadius="60%" 
+                    outerRadius="80%" 
+                    barSize={10} 
+                    data={[{ name: 'Tasks', value: stats.completedTasks / (stats.tasks + stats.completedTasks) * 100 || 0, fill: 'hsl(var(--p))' }]}
+                    startAngle={90}
+                    endAngle={-270}
+                  >
+                    <RadialBar
+                      minAngle={15}
+                      background
+                      clockWise
+                      dataKey='value'
                     />
-                  </LineChart>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--b2))',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: 'hsl(var(--bc))'
+                      }}
+                      formatter={(value) => `${value.toFixed(2)}%`}
+                    />
+                  </RadialBarChart>
                 </ResponsiveContainer>
               )}
             </div>

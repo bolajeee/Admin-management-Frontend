@@ -19,14 +19,12 @@ const AdminRoute = ({ children }) => {
  
   // If not logged in
   if (!authUser) {
-    console.warn('Unauthorized: No user session');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // If logged in but not an admin
   const roleString = typeof authUser.role === 'string' ? authUser.role.trim().toLowerCase() : authUser.role?.name?.trim().toLowerCase();
   if (roleString !== 'admin') {
-    console.warn(`Unauthorized: Role '${roleString}' is not admin`);
     return <Navigate to="/" replace />;
   }
 
