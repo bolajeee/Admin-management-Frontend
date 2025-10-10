@@ -38,7 +38,7 @@ const LoginPage = () => {
     e.preventDefault();
     setError(null);
     try {
-      const success = await login(formData);
+      const success = await login(formData, navigate);
       if (!success) {
         setError("Login failed. Please check your credentials.");
       }

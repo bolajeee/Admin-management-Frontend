@@ -62,7 +62,7 @@ export const useAuthStore = create(
         }
       },
 
-      login: async (formData) => {
+      login: async (formData, navigate) => {
         set({ isLoggingIn: true });
         try {
           const res = await axiosInstance.post("/auth/login", formData, {
@@ -74,6 +74,10 @@ export const useAuthStore = create(
           set({ authUser: user });
           localStorage.setItem("token", token);
           toast.success("Login successful");
+         
+          //navigate to homepage
+          navigate("/");
+          
           return true;
         } catch (error) {
           const message =
