@@ -30,7 +30,7 @@ const LoginPage = () => {
     if (authUser?.role && !isCheckingAuth) {
       authUser.role === "admin"
         ? navigate("/admin/dashboard")
-        : navigate(from);
+        : navigate("/");
     }
   }, [authUser, isCheckingAuth, isInitialCheck, navigate, from]);
 
