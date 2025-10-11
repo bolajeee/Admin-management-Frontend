@@ -85,7 +85,6 @@ function ReportsPage() {
     }
   };
 
-  const { deleteReport } = useReportStore();
 
   const handleSelectReport = (report) => {
     selectReport(report.id || report._id);
