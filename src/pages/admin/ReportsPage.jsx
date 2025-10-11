@@ -23,9 +23,11 @@ function ReportsPage() {
     isLoading,
     selectedReport,
     selectReport,
-    clearReportData
+    clearReportData,
+    deleteReport
   } = useReportStore();
 
+  
   useEffect(() => {
     fetchUploadedReports();
   }, [fetchUploadedReports]);

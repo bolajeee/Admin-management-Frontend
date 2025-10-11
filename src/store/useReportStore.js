@@ -18,7 +18,7 @@ export const useReportStore = create((set, get) => ({
       const reports = await reportService.getUploadedReports();
       
       set({ 
-        uploadedReports: reports, 
+        uploadedReports: Array.isArray(reports) ? reports : [], 
         error: null 
       });
       

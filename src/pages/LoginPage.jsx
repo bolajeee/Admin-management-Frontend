@@ -38,8 +38,12 @@ const LoginPage = () => {
     e.preventDefault();
     setError(null);
     try {
-      const success = await login(formData, navigate);
-      if (!success) {
+      const loggedInUser = await login(formData);
+      if (loggedInUser) {
+        typeof loggedInUser.role === "object" && loggedInUser.role !== null
+          ? navigate("/admin/dashboard")
+          : navigate("/");
+      } else {
         setError("Login failed. Please check your credentials.");
       }
     } catch (error) {

@@ -62,28 +62,33 @@ export const useAuthStore = create(
         }
       },
 
-      login: async (formData, navigate) => {
+      login: async (formData) => {
         set({ isLoggingIn: true });
+        console.log("Attempting login with formData:", formData);
         try {
           const res = await axiosInstance.post("/auth/login", formData, {
             withCredentials: true,
           });
 
-          const { user, token } = res.data.data;
+          const responseData = res.data.data; // This is the object containing user details and token
+
+          if (!responseData || !responseData.token) {
+            throw new Error("Invalid response data from server: Missing user or token.");
+          }
+
+          const user = responseData; // The user object is the responseData itself
+          const token = responseData.token; // The token is a property of the responseData
 
           set({ authUser: user });
           localStorage.setItem("token", token);
           toast.success("Login successful");
-         
-          //navigate to homepage
-          navigate("/");
-          
-          return true;
-        } catch (error) {
-          const message =
-            error.response?.data?.message || "Invalid credentials or server error.";
-          toast.error(message);
-          return false;
+                    
+                    return user;
+                          } catch (error) {
+                            console.error("Login error:", error);
+                            const message=
+                              error.response?.data?.message || "Invalid credentials or server error.";                    toast.error(message);
+                    return null;
         } finally {
           set({ isLoggingIn: false });
         }
