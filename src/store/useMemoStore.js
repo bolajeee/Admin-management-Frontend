@@ -16,14 +16,7 @@ export const useMemoStore = create((set, get) => ({
     set({ isMemosLoading: true });
     try {
       const response = await axiosInstance.get("/memos/all");
-      let memos = [];
-      if (Array.isArray(response.data)) {
-        memos = response.data;
-      } else if (Array.isArray(response.data.data)) {
-        memos = response.data.data;
-      }
-      // Filter out deleted memos
-      memos = memos.filter(memo => memo.status !== 'deleted');
+      const memos = (response.data.data || []).filter(memo => memo.status !== 'deleted');
       set({ memos });
       toast.success("Company memos fetched successfully");
     } catch (error) {
@@ -44,14 +37,7 @@ export const useMemoStore = create((set, get) => ({
     set({ isUserMemosLoading: true });
     try {
       const response = await axiosInstance.get(`/memos/user/${userId}`);
-      let userMemos = [];
-      if (Array.isArray(response.data)) {
-        userMemos = response.data;
-      } else if (Array.isArray(response.data.data)) {
-        userMemos = response.data.data;
-      }
-      // Filter out deleted memos
-      userMemos = userMemos.filter(memo => memo.status !== 'deleted');
+      const userMemos = (response.data.data || []).filter(memo => memo.status !== 'deleted');
       set({ userMemos });
       toast.success("User memos fetched successfully");
     } catch (error) {
@@ -81,7 +67,7 @@ export const useMemoStore = create((set, get) => ({
       if (response.status === 201) {
         toast.success("Company wide memo sent successfully");
         set((state) => ({
-          memos: [response.data.memo || response.data, ...state.memos]
+          memos: [response.data.data, ...state.memos]
         }));
       } else {
         toast.error("Failed to send company wide memo");

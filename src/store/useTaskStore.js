@@ -15,10 +15,8 @@ export const useTaskStore = create((set, get) => ({
         set({ isTasksLoading: true });
         try {
             const res = await axiosInstance.get('/tasks', { params: filters });
-            const tasks = Array.isArray(res.data) ? res.data : 
-                         Array.isArray(res.data.data) ? res.data.data : [];
-            // Normalize _id for all tasks
-            set({ tasks: tasks.map(t => ({ ...t, _id: t._id || t.id })) });
+            const tasks = (res.data.data || []).map(t => ({ ...t, _id: t._id || t.id }));
+            set({ tasks });
         } catch (error) {
             console.error('Error fetching tasks:', error);
             console.log('Error response:', error.response?.data);
@@ -53,7 +51,7 @@ export const useTaskStore = create((set, get) => ({
             const res = await axiosInstance.post('/tasks', taskData);
             
             // Normalize _id for the new task
-            const newTask = { ...res.data, _id: res.data._id || res.data.id };
+            const newTask = { ...res.data.data, _id: res.data.data._id || res.data.data.id };
             set(state => ({ 
                 tasks: [newTask, ...state.tasks],
                 userTasks: [newTask, ...state.userTasks] 
@@ -97,16 +95,16 @@ export const useTaskStore = create((set, get) => ({
             const res = await axiosInstance.patch(`/tasks/${taskId}`, updates);
             
             // Ensure we have valid response data
-            if (!res.data) {
+            if (!res.data.data) {
                 throw new Error('No data received from server');
             }
 
             // Normalize _id and create updated task object
             const updatedTask = { 
-                ...res.data, 
-                _id: res.data._id || res.data.id,
-                status: res.data.status || 'todo',
-                priority: res.data.priority || 'medium'
+                ...res.data.data, 
+                _id: res.data.data._id || res.data.data.id,
+                status: res.data.data.status || 'todo',
+                priority: res.data.data.priority || 'medium'
             };
 
             // Update both tasks and userTasks arrays

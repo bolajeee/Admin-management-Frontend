@@ -15,10 +15,7 @@ export const useChatStore = create((set) => ({
         set({ isUsersLoading: true });
         try {
             const response = await axiosInstance.get("/messages/users");
-            // Extract users array from response, fallback to empty array if not found
-            const users = Array.isArray(response.data) ? response.data : 
-                         Array.isArray(response.data.data) ? response.data.data : 
-                         Array.isArray(response.data.users) ? response.data.users : [];
+            const users = response.data.data || [];
             set({ users });
         } catch (error) {
             console.error("Error fetching users", error);
@@ -33,7 +30,7 @@ export const useChatStore = create((set) => ({
         set({ isMessagesLoading: true })
         try {
             const response = await axiosInstance.get(`/messages/userMessage/${userId}`)
-            set({ messages: response.data })
+            set({ messages: response.data.data.messages || [] })
             toast.success("Messages fetched successfully")
 
         } catch (error) {
@@ -70,16 +67,9 @@ export const useChatStore = create((set) => ({
                 }
             );
 
-            // Get current user info for senderName and senderAvatar
-            const authUser = useAuthStore.getState().authUser;
-            const newMessage = {
-                ...response.data,
-                isOwn: true,
-                senderName: authUser?.name || 'You',
-                senderAvatar: authUser?.avatar || '/avatar.png',
-            };
+            const newMessage = response.data.data.message;
 
-            set((state) => ({ messages: Array.isArray(state.messages) ? [...state.messages, newMessage] : [...(state.messages.messages || []), newMessage] }));
+            set((state) => ({ messages: [...state.messages, newMessage] }));
             toast.success("Message sent successfully");
         } catch (error) {
             console.error("Error sending message", error);

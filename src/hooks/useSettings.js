@@ -33,7 +33,7 @@ export function useSettings({ userId = null, initialSettings = null } = {}) {
       setIsLoading(true);
       try {
         const response = await axiosInstance.get('/settings');
-        setSettings(response.data || settings);
+        setSettings(response.data.data || settings);
       } catch (error) {
         console.error("Failed to fetch settings:", error);
         setError("Failed to load your settings. Please try again later.");
