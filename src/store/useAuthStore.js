@@ -72,12 +72,12 @@ export const useAuthStore = create(
 
           const responseData = res.data.data; // This is the object containing user details and token
 
-          if (!responseData || !responseData.user || !responseData.token) {
+          if (!responseData || !responseData.token) {
             throw new Error("Invalid response data from server: Missing user or token.");
           }
 
-          const user = responseData.user; // The user object is responseData.user
-          const token = responseData.token; // The token is a property of the responseData
+          const user = responseData; // Correct: responseData itself is the user object
+          const token = responseData.token;
 
           set({ authUser: user });
           localStorage.setItem("token", token);
