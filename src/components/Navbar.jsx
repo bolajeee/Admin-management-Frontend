@@ -7,17 +7,22 @@ import {
   User,
   LayoutDashboard,
   UserCog,
+  Menu,
   X
 } from "lucide-react";
-import { use, useEffect } from "react";
+import { useState } from "react";
 
 const Navbar = () => {
   const { logout, authUser } = useAuthStore();
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isAdmin = authUser?.role === "admin";
   const isAdminRoute = location.pathname.startsWith("/admin");
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
 
   return (
     <header className={`fixed top-0 z-40 border-b border-base-300 backdrop-blur-lg bg-base-100/80 w-full ${
@@ -61,8 +66,8 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Right side: Settings, Profile, Logout */}
-          <div className="flex items-center gap-2">
+          {/* Right side: Settings, Profile, Logout (Desktop) */}
+          <div className="hidden md:flex items-center gap-2">
             <Link 
               to="/settings" 
               className={`btn btn-sm btn-ghost hover:bg-base-200 gap-2 ${
@@ -107,6 +112,60 @@ const Navbar = () => {
               </>
             )}
           </div>
+
+          {/* Mobile menu toggle */}
+          <div className="md:hidden">
+            <button onClick={toggleMobileMenu} className="btn btn-ghost btn-circle">
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+
+          {/* Mobile menu content */}
+          {isMobileMenuOpen && (
+            <div className="absolute top-16 left-0 w-full bg-base-100 shadow-lg py-2 md:hidden">
+              <div className="flex flex-col items-start px-4">
+                <Link 
+                  to="/settings" 
+                  className="btn btn-ghost w-full justify-start gap-2"
+                  onClick={toggleMobileMenu}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Settings</span>
+                </Link>
+
+                {authUser && (
+                  <>
+                    <Link 
+                      to="/profile" 
+                      className="btn btn-ghost w-full justify-start gap-2"
+                      onClick={toggleMobileMenu}
+                    >
+                      {authUser.profilePicture ? (
+                        <img 
+                          src={authUser.profilePicture} 
+                          alt={authUser.name || authUser.email} 
+                          className="w-6 h-6 rounded-full"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                          <User className="w-4 h-4 text-primary" />
+                        </div>
+                      )}
+                      <span>{authUser.name || authUser.email}</span>
+                    </Link>
+
+                    <button
+                      onClick={() => { logout(); toggleMobileMenu(); }}
+                      className="btn btn-ghost w-full justify-start gap-2 text-error hover:text-error"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Logout</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

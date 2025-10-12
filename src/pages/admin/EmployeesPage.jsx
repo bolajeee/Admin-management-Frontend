@@ -178,16 +178,16 @@ export default function EmployeesPage() {
       ) : error ? (
         <div className="text-red-500">{error}</div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="table w-full">
+        <div className="overflow-x-auto w-full">
+          <table className="table w-full min-w-full block">
             <thead>
               <tr>
-                <th>User</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Last Seen</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th className="whitespace-nowrap">User</th>
+                <th className="whitespace-nowrap">Email</th>
+                <th className="whitespace-nowrap">Role</th>
+                <th className="whitespace-nowrap">Last Seen</th>
+                <th className="whitespace-nowrap">Status</th>
+                <th className="whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -202,7 +202,7 @@ export default function EmployeesPage() {
                 const userActive = typeof user?.active === 'boolean' ? user.active : true;
                 return (
                   <tr key={userId}>
-                    <td>
+                    <td className="whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className="avatar">
                           <div className="mask mask-squircle w-12 h-12">
@@ -214,10 +214,10 @@ export default function EmployeesPage() {
                         </div>
                       </div>
                     </td>
-                    <td>{userEmail || <span className="italic text-gray-400">No Email</span>}</td>
-                    <td>{userRole || <span className="italic text-gray-400">No Role</span>}</td>
-                    <td>{userLastSeen}</td>
-                    <td>
+                    <td className="whitespace-nowrap">{userEmail || <span className="italic text-gray-400">No Email</span>}</td>
+                    <td className="whitespace-nowrap">{userRole || <span className="italic text-gray-400">No Role</span>}</td>
+                    <td className="whitespace-nowrap">{userLastSeen}</td>
+                    <td className="whitespace-nowrap">
                       <input
                         type="checkbox"
                         className="toggle toggle-success"
@@ -225,7 +225,7 @@ export default function EmployeesPage() {
                         onChange={() => handleToggleActive(userId, userActive)}
                       />
                     </td>
-                    <td>
+                    <td className="whitespace-nowrap">
                       <div className="dropdown dropdown-end">
                         <button tabIndex={0} className="btn btn-ghost btn-xs">...</button>
                         <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">

@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 
 export function useAdminLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // New state for desktop sidebar collapse
   const [activeNavItem, setActiveNavItem] = useState('');
   const location = useLocation();
 
@@ -21,10 +22,16 @@ export function useAdminLayout() {
     setMobileMenuOpen(false);
   };
 
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => !prev);
+  };
+
   return {
     mobileMenuOpen,
+    isSidebarCollapsed,
     activeNavItem,
     toggleMobileMenu,
     closeMobileMenu,
+    toggleSidebarCollapse,
   };
 }

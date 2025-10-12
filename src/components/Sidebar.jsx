@@ -23,8 +23,14 @@ const Sidebar = () => {
 
   // Fetch users on mount
   useEffect(() => {
+    console.log("Sidebar: Calling getUsers()");
     getUsers();
   }, []);
+
+  // Log users data when it changes
+  useEffect(() => {
+    console.log("Sidebar: Users data updated:", users);
+  }, [users]);
 
   // Show skeleton loader while users are loading
   if (isUserLoading) return <SidebarSkeleton />;
@@ -52,7 +58,7 @@ const Sidebar = () => {
   }
 
   return (
-    <aside className="h-full w-[280px] lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
+    <div className="h-full w-[280px] lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
       {/* Sidebar header */}
       <div className="border-b border-base-300 w-full p-5">
         <div className="flex items-center gap-2">
@@ -98,7 +104,7 @@ const Sidebar = () => {
           </button>
         ))}
       </div>
-    </aside>
+    </div>
   );
 };
 

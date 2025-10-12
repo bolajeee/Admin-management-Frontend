@@ -15,7 +15,8 @@ export const useReportStore = create((set, get) => ({
   fetchUploadedReports: async () => {
     set({ isLoading: true, error: null });
     try {
-      const reports = await reportService.getUploadedReports();
+      const response = await reportService.getUploadedReports();
+      const reports = response.data;
       
       set({ 
         uploadedReports: Array.isArray(reports) ? reports : [], 
@@ -66,9 +67,9 @@ export const useReportStore = create((set, get) => ({
   fetchReportData: async (reportId, params = {}) => {
     set({ isLoading: true, error: null });
     try {
-      const data = await reportService.getReportData(reportId, params);
-      set({ reportData: data, error: null });
-      return data;
+      const response = await reportService.getReportData(reportId, params);
+      set({ reportData: response.data, error: null });
+      return response.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to fetch report data';
       set({ error: errorMessage });

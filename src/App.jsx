@@ -60,7 +60,8 @@ const App = () => {
   return (
     <>
       <Navbar />  
-      <Routes>
+      <div className="pt-16"> {/* Add padding-top to account for fixed Navbar */} 
+        <Routes>
         {/* Public Routes */}
         <Route
           path="/login"
@@ -122,6 +123,7 @@ const App = () => {
         {/* 404 Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </div> {/* This closing div was missing in the previous replacement */} 
 
       <Toaster />
     </>

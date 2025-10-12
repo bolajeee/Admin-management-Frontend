@@ -68,7 +68,7 @@ const adminNavItems = [
 
 export default function AdminLayout() {
   // Custom hook for mobile menu state
-  const { mobileMenuOpen, toggleMobileMenu, closeMobileMenu } = useAdminLayout();
+  const { mobileMenuOpen, toggleMobileMenu, closeMobileMenu, isSidebarCollapsed, toggleSidebarCollapse } = useAdminLayout();
   // Auth store for logout
   const { logout } = useAuthStore();
   // Router location for active nav highlighting
@@ -77,7 +77,7 @@ export default function AdminLayout() {
   const { theme } = useThemeStore();
 
   return (
-    <div className="h-screen flex overflow-hidden bg-base-100" data-theme={theme}>
+    <div className="h-screen flex bg-base-100" data-theme={theme}>
       {/* Mobile menu overlay for accessibility */}
       {mobileMenuOpen && (
         <div
@@ -91,7 +91,7 @@ export default function AdminLayout() {
       {/* Sidebar navigation */}
       <div
         className={`w-72 transform bg-base-200 border-r border-base-300 shadow-lg transition-transform duration-300 ease-in-out 
-          fixed top-0 inset-y-0 left-0 
+          fixed top-0 inset-y-0 left-0 z-50 
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
         aria-label="Admin sidebar navigation"
       >
@@ -110,7 +110,7 @@ export default function AdminLayout() {
             <nav className="flex-1 px-4 py-6 space-y-6" aria-label="Admin navigation">
               {adminNavItems.map((section) => (
                 <div key={section.section}>
-                  <h3 className="text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-3 px-2">
+                  <h3 className={`text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-3 px-2 ${isSidebarCollapsed ? 'hidden' : 'block'}`}>
                     {section.section}
                   </h3>
                   <div className="space-y-1">
@@ -121,14 +121,14 @@ export default function AdminLayout() {
                         className={`group flex items-center rounded-lg px-3 py-3 text-sm font-medium transition-all duration-200 relative ${location.pathname === item.path
                           ? 'bg-primary/10 text-primary shadow-sm border-l-4 border-primary'
                           : 'text-base-content hover:bg-base-300 hover:text-primary'
-                          }`}
+                          } ${isSidebarCollapsed ? 'justify-center' : ''}`}
                         onClick={closeMobileMenu}
                         aria-current={location.pathname === item.path ? "page" : undefined}
                       >
-                        <span className="mr-3 group-hover:scale-110 transition-transform">
+                        <span className={`mr-3 group-hover:scale-110 transition-transform ${isSidebarCollapsed ? 'mr-0' : ''}`}>
                           {item.icon}
                         </span>
-                        <div className="flex-1">
+                        <div className={`flex-1 ${isSidebarCollapsed ? 'hidden' : 'block'}`}>
                           <div className="font-medium">{item.name}</div>
                           <div className="text-xs text-base-content/60 group-hover:text-base-content/80">
                             {item.description}
@@ -151,8 +151,8 @@ export default function AdminLayout() {
                 className="flex items-center w-full rounded-lg px-3 py-3 text-sm font-medium text-error transition-all duration-200 hover:bg-error/10 hover:scale-[1.02] group"
                 aria-label="Logout"
               >
-                <LogOut className="mr-3 h-5 w-5 group-hover:rotate-12 transition-transform" />
-                <div>
+                <LogOut className={`mr-3 h-5 w-5 group-hover:rotate-12 transition-transform ${isSidebarCollapsed ? 'mr-0' : ''}`} />
+                <div className={`${isSidebarCollapsed ? 'hidden' : 'block'}`}>
                   <div className="font-medium">Logout</div>
                   <div className="text-xs text-error/60">Sign out of admin panel</div>
                 </div>
@@ -174,7 +174,7 @@ export default function AdminLayout() {
       )}
 
       {/* Main content area */}
-      <div className="flex flex-1 flex-col h-screen md:ml-72">
+      <div className="flex flex-1 flex-col h-screen overflow-x-hidden md:ml-72">
         {/* Header with breadcrumbs */}
         <header className="h-16 flex items-center justify-between px-6 border-b border-base-300 bg-base-100/80 backdrop-blur z-30 shadow-sm">
           <div className="flex items-center gap-4">
@@ -209,6 +209,14 @@ export default function AdminLayout() {
               aria-label="Open sidebar"
             >
               <Menu className="h-5 w-5" />
+            </button>
+            {/* Desktop sidebar collapse toggle */}
+            <button
+              onClick={toggleSidebarCollapse}
+              className="hidden md:block rounded-lg p-2 text-base-content/60 hover:bg-base-300 transition-colors"
+              aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isSidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </header>
