@@ -63,7 +63,7 @@ const ChatContainer = ({ showHeader = true }) => {
       )}
       <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-2 min-h-0 space-y-6 bg-gradient-to-b from-base-100 via-base-200 to-base-100 dark:from-base-200 dark:via-base-300 dark:to-base-200">
         {messageArray.length > 0 ? (
-          messageArray.map((msg, idx) => {
+          messageArray.slice().reverse().map((msg, idx) => {
             const isOwn = msg.sender === authUser?._id || msg.senderId === authUser?._id;
             const imageUrl = getSingleImageUrl(msg);
 
