@@ -60,7 +60,7 @@ const SettingsPanel = ({ isAdmin = false, userId = null, initialSettings = null 
                 ) : (
                   <div
                     className="h-5 w-5 rounded-full"
-                    style={{ backgroundColor: THEME_COLORS[themeName].primary }}
+                    style={{ backgroundColor: THEME_COLORS[themeName]?.primary || '#4f46e5' }}
                   />
                 )}
                 <span className="capitalize">{themeName}</span>

@@ -14,6 +14,8 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { axiosInstance } from '../../lib/axios';
 import DashboardStats from '../../components/dashboard/DashboardStats';
+import EnhancedDashboardStats from '../../components/dashboard/EnhancedDashboardStats';
+import QuickActionsPanel from '../../components/dashboard/QuickActionsPanel';
 import QuickActions from '../../components/dashboard/QuickActions';
 import MemoModal from '../../components/modals/MemoModal';
 import TaskModal from '../../components/modals/TaskModal';
@@ -209,8 +211,8 @@ function DashboardPage() {
       {/* Page Header */}
       <h1 className="text-2xl font-bold" aria-label="Dashboard">Dashboard</h1>
 
-      {/* Dashboard Stats: Shows key metrics for admins */}
-      <DashboardStats stats={stats} loading={loading} />
+      {/* Enhanced Dashboard Stats: Shows key metrics for admins */}
+      <EnhancedDashboardStats stats={stats} loading={loading} />
 
       {/* Analytics Charts: Visualize tasks and memos over time */}
       <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow">
@@ -344,9 +346,37 @@ function DashboardPage() {
         </div>
       </div>
 
+      {/* Enhanced Quick Actions Panel */}
+      <QuickActionsPanel 
+        onAction={(actionId) => {
+          switch(actionId) {
+            case 'add-user':
+              handleAddUser();
+              break;
+            case 'send-memo':
+              handleSendMemo();
+              break;
+            case 'create-task':
+              handleCreateTask();
+              break;
+            case 'view-messages':
+              navigate('/admin/messages');
+              break;
+            case 'generate-report':
+              navigate('/admin/reports');
+              break;
+            case 'manage-users':
+              navigate('/admin/employees');
+              break;
+            default:
+              console.log('Action not implemented:', actionId);
+          }
+        }}
+      />
+
       {/* Quick Actions and Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions: Admin shortcuts for common actions */}
+        {/* Legacy Quick Actions - keeping for comparison */}
         <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow">
           <QuickActions
             actions={actions}

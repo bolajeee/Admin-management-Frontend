@@ -8,14 +8,24 @@ import {
   LayoutDashboard,
   UserCog,
   Menu,
-  X
+  X,
+  Bell,
+  Palette,
+  Search,
+  Command
 } from "lucide-react";
 import { useState } from "react";
+import NotificationCenter from "./ui/NotificationCenter";
+import ThemeSelector from "./ui/ThemeSelector";
+import GlobalSearch from "./ui/GlobalSearch";
 
 const Navbar = () => {
   const { logout, authUser } = useAuthStore();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   const isAdmin = authUser?.role === "admin";
   const isAdminRoute = location.pathname.startsWith("/admin");
@@ -66,8 +76,44 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Right side: Settings, Profile, Logout (Desktop) */}
+          {/* Right side: Search, Notifications, Theme, Settings, Profile, Logout (Desktop) */}
           <div className="hidden md:flex items-center gap-2">
+            {/* Quick Search */}
+            <button
+              onClick={() => setShowSearch(!showSearch)}
+              className="btn btn-sm btn-ghost hover:bg-base-200"
+              title="Quick Search (Ctrl+K)"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+
+            {/* Notifications */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="btn btn-sm btn-ghost hover:bg-base-200 relative"
+                title="Notifications"
+              >
+                <Bell className="w-4 h-4" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-error rounded-full text-xs flex items-center justify-center text-white">
+                  3
+                </span>
+              </button>
+              <NotificationCenter 
+                isOpen={showNotifications} 
+                onClose={() => setShowNotifications(false)} 
+              />
+            </div>
+
+            {/* Theme Selector */}
+            <button
+              onClick={() => setShowThemeSelector(true)}
+              className="btn btn-sm btn-ghost hover:bg-base-200"
+              title="Change Theme"
+            >
+              <Palette className="w-4 h-4" />
+            </button>
+
             <Link 
               to="/settings" 
               className={`btn btn-sm btn-ghost hover:bg-base-200 gap-2 ${
@@ -168,6 +214,18 @@ const Navbar = () => {
           )}
         </div>
       </div>
+
+      {/* Global Search Modal */}
+      <GlobalSearch 
+        isOpen={showSearch} 
+        onClose={() => setShowSearch(false)} 
+      />
+
+      {/* Theme Selector Modal */}
+      <ThemeSelector 
+        isOpen={showThemeSelector} 
+        onClose={() => setShowThemeSelector(false)} 
+      />
     </header>
   );
 };

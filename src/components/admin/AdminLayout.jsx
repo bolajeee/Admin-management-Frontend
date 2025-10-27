@@ -88,9 +88,9 @@ export default function AdminLayout() {
         />
       )}
 
-      {/* Sidebar navigation */}
+      {/* Modern Sidebar navigation */}
       <div
-        className={`w-72 transform bg-base-200 border-r border-base-300 shadow-lg transition-transform duration-300 ease-in-out 
+        className={`w-72 transform bg-gradient-to-b from-base-200 to-base-300 border-r border-base-300 shadow-xl transition-transform duration-300 ease-in-out 
           fixed top-0 inset-y-0 left-0 z-50 
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
         aria-label="Admin sidebar navigation"

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 
 // Components
 import Navbar from './components/Navbar';
+import MobileBottomNav from './components/ui/MobileBottomNav';
 import { Toaster } from 'react-hot-toast';
 import { Loader } from 'lucide-react';
 
@@ -19,12 +20,12 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminRoute from './components/admin/AdminRoute';
 import DashboardPage from './pages/admin/DashboardPage';
-import EmployeesPage from './pages/admin/EmployeesPage';
-import MessagesPage from './pages/admin/MessagesPage';
-import MemosPage from './pages/admin/MemosPage';
-import TasksPage from './pages/admin/TasksPage';
-import ReportsPage from './pages/admin/ReportsPage';
-import AdminSettingsPage from './pages/admin/SettingsPage';
+import EmployeesPage from './pages/admin/EnhancedEmployeesPage';
+import MessagesPage from './pages/admin/EnhancedMessagesPage';
+import MemosPage from './pages/admin/EnhancedMemosPage';
+import TasksPage from './pages/admin/EnhancedTasksPage';
+import ReportsPage from './pages/admin/EnhancedReportsPage';
+import AdminSettingsPage from './pages/admin/EnhancedSettingsPage';
 
 // Stores
 import { useAuthStore } from './store/useAuthStore';
@@ -124,6 +125,9 @@ const App = () => {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </div> {/* This closing div was missing in the previous replacement */} 
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
 
       <Toaster />
     </>

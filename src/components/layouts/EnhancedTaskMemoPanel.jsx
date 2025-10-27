@@ -1,0 +1,261 @@
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  CheckSquare,
+  Bell,
+  Plus,
+  Search,
+  Filter,
+  MoreVertical,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  User,
+  Calendar,
+  Flag,
+  Eye,
+  MessageSquare
+} from "lucide-react";
+import { useTaskStore } from "../../store/useTaskStore";
+import { useMemoStore } from "../../store/useMemoStore";
+import { useAuthStore } from "../../store/useAuthStore";
+import UserAvatar from "../ui/UserAvatar";
+
+const EnhancedTaskMemoPanel = ({ activeTab, setActiveTab, isMobile = false }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState("all");
+  const { authUser } = useAuthStore();
+
+  // Mock data - replace with actual store data
+  const mockTasks = [
+    {
+      _id: "1",
+      title: "Review project proposal",
+      description: "Review and provide feedback on the new project proposal",
+      priority: "high",
+      status: "pending",
+      dueDate: new Date(Date.now() + 86400000).toISOString(),
+      assignedTo: { name: "John Doe", email: "john@example.com" },
+      createdAt: new Date().toISOString()
+    },
+    {
+      _id: "2", 
+      title: "Update documentation",
+      description: "Update the API documentation with new endpoints",
+      priority: "medium",
+      status: "in-progress",
+      dueDate: new Date(Date.now() + 172800000).toISOString(),
+      assignedTo: authUser,
+      createdAt: new Date().toISOString()
+    }
+  ];
+
+  const mockMemos = [
+    {
+      _id: "1",
+      title: "Team Meeting Tomorrow",
+      content: "Don't forget about our weekly team meeting tomorrow at 10 AM",
+      severity: "medium",
+      author: { name: "Manager", email: "manager@example.com" },
+      createdAt: new Date().toISOString(),
+      isRead: false
+    },
+    {
+      _id: "2",
+      title: "New Policy Update", 
+      content: "Please review the updated remote work policy in the company handbook",
+      severity: "high",
+      author: { name: "HR Team", email: "hr@example.com" },
+      createdAt: new Date().toISOString(),
+      isRead: true
+    }
+  ];
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case "critical": return "text-error";
+      case "high": return "text-warning";
+      case "medium": return "text-info";
+      case "low": return "text-success";
+      default: return "text-base-content";
+    }
+  };
+
+  const getSeverityColor = (severity) => {
+    switch (severity) {
+      case "critical": return "text-error";
+      case "high": return "text-warning"; 
+      case "medium": return "text-info";
+      case "low": return "text-success";
+      default: return "text-base-content";
+    }
+  };
+
+  const TaskItem = ({ task }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-3 bg-base-100 rounded-lg border border-base-300 hover:shadow-md transition-all cursor-pointer"
+    >
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Flag className={`h-4 w-4 ${getPriorityColor(task.priority)}`} />
+          <h4 className="font-medium text-sm text-base-content truncate">{task.title}</h4>
+        </div>
+        <div className="dropdown dropdown-end">
+          <button tabIndex={0} className="btn btn-ghost btn-xs btn-circle">
+            <MoreVertical className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+      
+      <p className="text-xs text-base-content/60 mb-3 line-clamp-2">{task.description}</p>
+      
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {task.assignedTo && <UserAvatar user={task.assignedTo} size="w-5 h-5" />}
+          <span className={`badge badge-xs ${
+            task.status === 'completed' ? 'badge-success' :
+            task.status === 'in-progress' ? 'badge-info' : 'badge-ghost'
+          }`}>
+            {task.status}
+          </span>
+        </div>
+        {task.dueDate && (
+          <div className="flex items-center gap-1 text-xs text-base-content/60">
+            <Calendar className="h-3 w-3" />
+            {new Date(task.dueDate).toLocaleDateString()}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+
+  const MemoItem = ({ memo }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`p-3 rounded-lg border transition-all cursor-pointer ${
+        memo.isRead 
+          ? 'bg-base-100 border-base-300' 
+          : 'bg-primary/5 border-primary/20 shadow-sm'
+      }`}
+    >
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <AlertCircle className={`h-4 w-4 ${getSeverityColor(memo.severity)}`} />
+          <h4 className={`font-medium text-sm text-base-content ${!memo.isRead ? 'font-semibold' : ''}`}>
+            {memo.title}
+          </h4>
+        </div>
+        <div className="flex items-center gap-1">
+          {!memo.isRead && <div className="w-2 h-2 bg-primary rounded-full"></div>}
+          <div className="dropdown dropdown-end">
+            <button tabIndex={0} className="btn btn-ghost btn-xs btn-circle">
+              <MoreVertical className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <p className="text-xs text-base-content/60 mb-3 line-clamp-2">{memo.content}</p>
+      
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <UserAvatar user={memo.author} size="w-5 h-5" />
+          <span className="text-xs text-base-content/60">{memo.author?.name}</span>
+        </div>
+        <div className="flex items-center gap-1 text-xs text-base-content/60">
+          <Clock className="h-3 w-3" />
+          {new Date(memo.createdAt).toLocaleDateString()}
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  return (
+    <div className={`flex flex-col bg-base-100 ${isMobile ? 'h-64' : 'h-full'}`}>
+      {/* Header */}
+      <div className="p-4 border-b border-base-300">
+        <div className="flex items-center justify-between mb-3">
+          <div className="tabs tabs-boxed tabs-sm">
+            <button
+              onClick={() => setActiveTab("tasks")}
+              className={`tab gap-2 ${activeTab === "tasks" ? "tab-active" : ""}`}
+            >
+              <CheckSquare className="h-4 w-4" />
+              Tasks
+            </button>
+            <button
+              onClick={() => setActiveTab("memos")}
+              className={`tab gap-2 ${activeTab === "memos" ? "tab-active" : ""}`}
+            >
+              <Bell className="h-4 w-4" />
+              Memos
+            </button>
+          </div>
+          
+          <button className="btn btn-primary btn-xs gap-1">
+            <Plus className="h-3 w-3" />
+            New
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-base-content/40" />
+          <input
+            type="text"
+            placeholder={`Search ${activeTab}...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="input input-bordered input-xs w-full pl-8"
+          />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        <AnimatePresence mode="wait">
+          {activeTab === "tasks" ? (
+            <motion.div
+              key="tasks"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-3"
+            >
+              {mockTasks.map((task) => (
+                <TaskItem key={task._id} task={task} />
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="memos"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-3"
+            >
+              {mockMemos.map((memo) => (
+                <MemoItem key={memo._id} memo={memo} />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Footer */}
+      <div className="p-3 border-t border-base-300">
+        <div className="flex items-center justify-between text-xs text-base-content/60">
+          <span>
+            {activeTab === "tasks" ? mockTasks.length : mockMemos.length} {activeTab}
+          </span>
+          <button className="btn btn-ghost btn-xs">View All</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EnhancedTaskMemoPanel;

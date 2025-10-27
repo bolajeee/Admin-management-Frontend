@@ -1,7 +1,7 @@
-import ChatLayout from "../components/layouts/ChatLayout";
+import EnhancedHomePage from "./EnhancedHomePage";
 
 const HomePage = () => {
-    return <ChatLayout />;
+    return <EnhancedHomePage />;
 };
 
 export default HomePage;
