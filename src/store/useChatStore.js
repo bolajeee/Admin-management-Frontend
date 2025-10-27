@@ -3,13 +3,15 @@ import toast from "react-hot-toast"
 import { axiosInstance } from "../lib/axios"
 import { useAuthStore } from "./useAuthStore"
 
-export const useChatStore = create((set) => ({
+export const useChatStore = create((set, get) => ({
     messages: [],
     users: [],
+    conversations: [],
     selectedUser: null,
     isUsersLoading: false,
     isMessagesLoading: false,
     isSendingMessage: false,
+    isConversationsLoading: false,
 
     getUsers: async () => {
         set({ isUsersLoading: true });
@@ -26,13 +28,26 @@ export const useChatStore = create((set) => ({
         }
     },
 
+    getConversations: async () => {
+        set({ isConversationsLoading: true });
+        try {
+            const response = await axiosInstance.get("/messages/conversations");
+            const conversations = response.data.data?.conversations || [];
+            set({ conversations });
+        } catch (error) {
+            console.error("Error fetching conversations", error);
+            toast.error("Error fetching conversations");
+            set({ conversations: [] });
+        } finally {
+            set({ isConversationsLoading: false });
+        }
+    },
+
     getMessages: async (userId) => {
         set({ isMessagesLoading: true })
         try {
             const response = await axiosInstance.get(`/messages/userMessage/${userId}`)
-            set({ messages: response.data.data.messages || [] })
-            toast.success("Messages fetched successfully")
-
+            set({ messages: response.data.data?.messages || [] })
         } catch (error) {
             console.error("Error fetching messages", error)
             toast.error("Error fetching messages")
@@ -41,7 +56,7 @@ export const useChatStore = create((set) => ({
         }
     },
 
-    
+
     /**
      * Send a message (text and/or image) to a user.
      * @param {Object} params
@@ -67,10 +82,12 @@ export const useChatStore = create((set) => ({
                 }
             );
 
-            const newMessage = response.data.data.message;
+            const newMessage = response.data.data?.message;
 
             set((state) => ({ messages: [...state.messages, newMessage] }));
-            toast.success("Message sent successfully");
+
+            // Update conversations list
+            get().getConversations();
         } catch (error) {
             console.error("Error sending message", error);
             toast.error("Error sending message");
@@ -80,10 +97,16 @@ export const useChatStore = create((set) => ({
     },
 
 
-    setSelectedUser:
-        (selectedUser) => {
-            set({ selectedUser })
-        },
+    setSelectedUser: (selectedUser) => {
+        set({ selectedUser })
+    },
 
+    updateOnlineStatus: async (isOnline = true) => {
+        try {
+            await axiosInstance.patch("/messages/online-status", { isOnline });
+        } catch (error) {
+            console.error("Error updating online status", error);
+        }
+    },
 
 }))

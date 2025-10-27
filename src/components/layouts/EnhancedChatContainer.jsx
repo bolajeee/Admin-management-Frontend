@@ -29,7 +29,7 @@ import UserAvatar from "../ui/UserAvatar";
 import toast from "react-hot-toast";
 
 const EnhancedChatContainer = () => {
-  const { selectedUser, messages, sendMessage, isMessagesLoading } = useChatStore();
+  const { selectedUser, messages, sendMessage, getMessages, isMessagesLoading } = useChatStore();
   const { authUser } = useAuthStore();
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -38,6 +38,12 @@ const EnhancedChatContainer = () => {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (selectedUser?._id) {
+      getMessages(selectedUser._id);
+    }
+  }, [selectedUser, getMessages]);
 
   useEffect(() => {
     scrollToBottom();
@@ -52,7 +58,10 @@ const EnhancedChatContainer = () => {
     if (!newMessage.trim() || !selectedUser) return;
 
     try {
-      await sendMessage(selectedUser._id, newMessage.trim());
+      await sendMessage({ 
+        receiverId: selectedUser._id, 
+        text: newMessage.trim() 
+      });
       setNewMessage("");
     } catch (error) {
       toast.error("Failed to send message");
@@ -98,50 +107,7 @@ const EnhancedChatContainer = () => {
     return null;
   };
 
-  const mockMessages = [
-    {
-      _id: "1",
-      text: "Hey! How are you doing today?",
-      senderId: selectedUser?._id,
-      receiverId: authUser._id,
-      createdAt: new Date(Date.now() - 60000 * 30).toISOString(),
-      status: "read"
-    },
-    {
-      _id: "2",
-      text: "I'm doing great! Just finished the project we discussed. What do you think about the new design?",
-      senderId: authUser._id,
-      receiverId: selectedUser?._id,
-      createdAt: new Date(Date.now() - 60000 * 25).toISOString(),
-      status: "read"
-    },
-    {
-      _id: "3",
-      text: "That looks amazing! I love the color scheme and the layout is very intuitive.",
-      senderId: selectedUser?._id,
-      receiverId: authUser._id,
-      createdAt: new Date(Date.now() - 60000 * 20).toISOString(),
-      status: "read"
-    },
-    {
-      _id: "4",
-      text: "Thanks! I spent quite a bit of time on the user experience. Should we schedule a meeting to discuss the next steps?",
-      senderId: authUser._id,
-      receiverId: selectedUser?._id,
-      createdAt: new Date(Date.now() - 60000 * 15).toISOString(),
-      status: "delivered"
-    },
-    {
-      _id: "5",
-      text: "Absolutely! How about tomorrow at 2 PM?",
-      senderId: selectedUser?._id,
-      receiverId: authUser._id,
-      createdAt: new Date(Date.now() - 60000 * 10).toISOString(),
-      status: "read"
-    }
-  ];
-
-  const displayMessages = messages.length > 0 ? messages : mockMessages;
+  const displayMessages = messages || [];
 
   return (
     <div className="flex-1 flex flex-col bg-base-100">
@@ -207,8 +173,10 @@ const EnhancedChatContainer = () => {
         ) : (
           <AnimatePresence>
             {displayMessages.map((message, index) => {
-              const isOwn = message.senderId === authUser._id;
-              const showAvatar = index === 0 || displayMessages[index - 1].senderId !== message.senderId;
+              const isOwn = message.sender?._id === authUser._id || message.senderId === authUser._id;
+              const showAvatar = index === 0 || 
+                (displayMessages[index - 1].sender?._id || displayMessages[index - 1].senderId) !== 
+                (message.sender?._id || message.senderId);
               const showTime = index === displayMessages.length - 1 || 
                 displayMessages[index + 1].senderId !== message.senderId ||
                 new Date(displayMessages[index + 1].createdAt) - new Date(message.createdAt) > 300000; // 5 minutes

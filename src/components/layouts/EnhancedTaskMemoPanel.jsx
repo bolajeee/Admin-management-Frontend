@@ -25,51 +25,26 @@ const EnhancedTaskMemoPanel = ({ activeTab, setActiveTab, isMobile = false }) =>
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
   const { authUser } = useAuthStore();
+  const { tasks, getUserTasks, isUserTasksLoading } = useTaskStore();
+  const { userMemos, getUserMemos, isUserMemosLoading } = useMemoStore();
 
-  // Mock data - replace with actual store data
-  const mockTasks = [
-    {
-      _id: "1",
-      title: "Review project proposal",
-      description: "Review and provide feedback on the new project proposal",
-      priority: "high",
-      status: "pending",
-      dueDate: new Date(Date.now() + 86400000).toISOString(),
-      assignedTo: { name: "John Doe", email: "john@example.com" },
-      createdAt: new Date().toISOString()
-    },
-    {
-      _id: "2", 
-      title: "Update documentation",
-      description: "Update the API documentation with new endpoints",
-      priority: "medium",
-      status: "in-progress",
-      dueDate: new Date(Date.now() + 172800000).toISOString(),
-      assignedTo: authUser,
-      createdAt: new Date().toISOString()
+  useEffect(() => {
+    if (authUser?._id) {
+      getUserTasks(authUser._id);
+      getUserMemos(authUser._id);
     }
-  ];
+  }, [authUser, getUserTasks, getUserMemos]);
 
-  const mockMemos = [
-    {
-      _id: "1",
-      title: "Team Meeting Tomorrow",
-      content: "Don't forget about our weekly team meeting tomorrow at 10 AM",
-      severity: "medium",
-      author: { name: "Manager", email: "manager@example.com" },
-      createdAt: new Date().toISOString(),
-      isRead: false
-    },
-    {
-      _id: "2",
-      title: "New Policy Update", 
-      content: "Please review the updated remote work policy in the company handbook",
-      severity: "high",
-      author: { name: "HR Team", email: "hr@example.com" },
-      createdAt: new Date().toISOString(),
-      isRead: true
-    }
-  ];
+  // Filter tasks and memos based on search term
+  const filteredTasks = (tasks || []).filter(task =>
+    task.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    task.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  ).slice(0, 10); // Limit to 10 for panel
+
+  const filteredMemos = (userMemos || []).filter(memo =>
+    memo.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    memo.content?.toLowerCase().includes(searchTerm.toLowerCase())
+  ).slice(0, 10); // Limit to 10 for panel
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -131,47 +106,51 @@ const EnhancedTaskMemoPanel = ({ activeTab, setActiveTab, isMobile = false }) =>
     </motion.div>
   );
 
-  const MemoItem = ({ memo }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`p-3 rounded-lg border transition-all cursor-pointer ${
-        memo.isRead 
-          ? 'bg-base-100 border-base-300' 
-          : 'bg-primary/5 border-primary/20 shadow-sm'
-      }`}
-    >
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <AlertCircle className={`h-4 w-4 ${getSeverityColor(memo.severity)}`} />
-          <h4 className={`font-medium text-sm text-base-content ${!memo.isRead ? 'font-semibold' : ''}`}>
-            {memo.title}
-          </h4>
-        </div>
-        <div className="flex items-center gap-1">
-          {!memo.isRead && <div className="w-2 h-2 bg-primary rounded-full"></div>}
-          <div className="dropdown dropdown-end">
-            <button tabIndex={0} className="btn btn-ghost btn-xs btn-circle">
-              <MoreVertical className="h-3 w-3" />
-            </button>
+  const MemoItem = ({ memo }) => {
+    const isRead = memo.readBy?.some(read => read.user === authUser._id) || false;
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`p-3 rounded-lg border transition-all cursor-pointer ${
+          isRead 
+            ? 'bg-base-100 border-base-300' 
+            : 'bg-primary/5 border-primary/20 shadow-sm'
+        }`}
+      >
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className={`h-4 w-4 ${getSeverityColor(memo.severity)}`} />
+            <h4 className={`font-medium text-sm text-base-content ${!isRead ? 'font-semibold' : ''}`}>
+              {memo.title}
+            </h4>
+          </div>
+          <div className="flex items-center gap-1">
+            {!isRead && <div className="w-2 h-2 bg-primary rounded-full"></div>}
+            <div className="dropdown dropdown-end">
+              <button tabIndex={0} className="btn btn-ghost btn-xs btn-circle">
+                <MoreVertical className="h-3 w-3" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <p className="text-xs text-base-content/60 mb-3 line-clamp-2">{memo.content}</p>
-      
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <UserAvatar user={memo.author} size="w-5 h-5" />
-          <span className="text-xs text-base-content/60">{memo.author?.name}</span>
+        
+        <p className="text-xs text-base-content/60 mb-3 line-clamp-2">{memo.content}</p>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <UserAvatar user={memo.createdBy} size="w-5 h-5" />
+            <span className="text-xs text-base-content/60">{memo.createdBy?.name}</span>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-base-content/60">
+            <Clock className="h-3 w-3" />
+            {new Date(memo.createdAt).toLocaleDateString()}
+          </div>
         </div>
-        <div className="flex items-center gap-1 text-xs text-base-content/60">
-          <Clock className="h-3 w-3" />
-          {new Date(memo.createdAt).toLocaleDateString()}
-        </div>
-      </div>
-    </motion.div>
-  );
+      </motion.div>
+    );
+  };
 
   return (
     <div className={`flex flex-col bg-base-100 ${isMobile ? 'h-64' : 'h-full'}`}>
@@ -225,9 +204,20 @@ const EnhancedTaskMemoPanel = ({ activeTab, setActiveTab, isMobile = false }) =>
               exit={{ opacity: 0 }}
               className="space-y-3"
             >
-              {mockTasks.map((task) => (
-                <TaskItem key={task._id} task={task} />
-              ))}
+              {isUserTasksLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="loading loading-spinner loading-sm"></div>
+                </div>
+              ) : filteredTasks.length > 0 ? (
+                filteredTasks.map((task) => (
+                  <TaskItem key={task._id} task={task} />
+                ))
+              ) : (
+                <div className="text-center py-8 text-base-content/60">
+                  <CheckSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No tasks found</p>
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -237,9 +227,20 @@ const EnhancedTaskMemoPanel = ({ activeTab, setActiveTab, isMobile = false }) =>
               exit={{ opacity: 0 }}
               className="space-y-3"
             >
-              {mockMemos.map((memo) => (
-                <MemoItem key={memo._id} memo={memo} />
-              ))}
+              {isUserMemosLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="loading loading-spinner loading-sm"></div>
+                </div>
+              ) : filteredMemos.length > 0 ? (
+                filteredMemos.map((memo) => (
+                  <MemoItem key={memo._id} memo={memo} />
+                ))
+              ) : (
+                <div className="text-center py-8 text-base-content/60">
+                  <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No memos found</p>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -249,7 +250,7 @@ const EnhancedTaskMemoPanel = ({ activeTab, setActiveTab, isMobile = false }) =>
       <div className="p-3 border-t border-base-300">
         <div className="flex items-center justify-between text-xs text-base-content/60">
           <span>
-            {activeTab === "tasks" ? mockTasks.length : mockMemos.length} {activeTab}
+            {activeTab === "tasks" ? filteredTasks.length : filteredMemos.length} {activeTab}
           </span>
           <button className="btn btn-ghost btn-xs">View All</button>
         </div>

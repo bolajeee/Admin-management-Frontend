@@ -17,17 +17,35 @@ import {
 } from "lucide-react";
 import { useChatStore } from "../../store/useChatStore";
 import { useAuthStore } from "../../store/useAuthStore";
+import { axiosInstance } from "../../lib/axios";
 import UserAvatar from "../ui/UserAvatar";
+import toast from "react-hot-toast";
 
 const EnhancedSidebar = ({ searchTerm = "" }) => {
-  const { getUsers, users, selectedUser, setSelectedUser, isUserLoading } = useChatStore();
-  const { onlineUsers } = useAuthStore();
+  const { getUsers, users, selectedUser, setSelectedUser, isUserLoading, getConversations, conversations, isConversationsLoading } = useChatStore();
+  const { onlineUsers, authUser } = useAuthStore();
   const [filter, setFilter] = useState('all'); // all, online, starred, archived
   const [sortBy, setSortBy] = useState('recent'); // recent, name, status
+  const [recentMessages, setRecentMessages] = useState([]);
+  const [loadingRecent, setLoadingRecent] = useState(false);
 
   useEffect(() => {
     getUsers();
-  }, []);
+    getConversations();
+    fetchRecentMessages();
+  }, [getUsers, getConversations]);
+
+  const fetchRecentMessages = async () => {
+    setLoadingRecent(true);
+    try {
+      const response = await axiosInstance.get('/messages/recent');
+      setRecentMessages(response.data.data?.messages || []);
+    } catch (error) {
+      console.error('Error fetching recent messages:', error);
+    } finally {
+      setLoadingRecent(false);
+    }
+  };
 
   // Filter and sort users
   const filteredUsers = users
@@ -65,32 +83,52 @@ const EnhancedSidebar = ({ searchTerm = "" }) => {
     });
 
   const getLastMessagePreview = (user) => {
-    // Mock last message - replace with actual data from your store
-    const messages = [
-      "Hey, how are you doing?",
-      "Thanks for the update!",
-      "Let's schedule a meeting",
-      "Great work on the project",
-      "Can you review this document?"
-    ];
-    return messages[Math.floor(Math.random() * messages.length)];
+    // Find the most recent message involving this user
+    const userMessages = recentMessages.filter(msg => 
+      (msg.sender?._id === user._id && msg.receiver?._id === authUser._id) ||
+      (msg.sender?._id === authUser._id && msg.receiver?._id === user._id)
+    );
+    
+    if (userMessages.length > 0) {
+      const lastMessage = userMessages[0];
+      return lastMessage.text || (lastMessage.image ? "📷 Image" : "Message");
+    }
+    
+    return "No messages yet";
   };
 
   const getLastMessageTime = (user) => {
-    // Mock timestamp - replace with actual data
-    const now = new Date();
-    const randomMinutes = Math.floor(Math.random() * 1440); // Random time in last 24 hours
-    const timestamp = new Date(now - randomMinutes * 60 * 1000);
+    // Find the most recent message involving this user
+    const userMessages = recentMessages.filter(msg => 
+      (msg.sender?._id === user._id && msg.receiver?._id === authUser._id) ||
+      (msg.sender?._id === authUser._id && msg.receiver?._id === user._id)
+    );
     
-    const diffInHours = (now - timestamp) / (1000 * 60 * 60);
-    
-    if (diffInHours < 1) {
-      return `${Math.floor(diffInHours * 60)}m`;
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)}h`;
-    } else {
-      return timestamp.toLocaleDateString();
+    if (userMessages.length > 0) {
+      const timestamp = new Date(userMessages[0].createdAt);
+      const now = new Date();
+      const diffInHours = (now - timestamp) / (1000 * 60 * 60);
+      
+      if (diffInHours < 1) {
+        return `${Math.floor(diffInHours * 60)}m`;
+      } else if (diffInHours < 24) {
+        return `${Math.floor(diffInHours)}h`;
+      } else {
+        return timestamp.toLocaleDateString();
+      }
     }
+    
+    return "";
+  };
+
+  const hasUnreadMessages = (user) => {
+    // Check if there are unread messages from this user
+    const userMessages = recentMessages.filter(msg => 
+      msg.sender?._id === user._id && 
+      msg.receiver?._id === authUser._id &&
+      !msg.readAt
+    );
+    return userMessages.length > 0;
   };
 
   if (isUserLoading) {
@@ -195,7 +233,7 @@ const EnhancedSidebar = ({ searchTerm = "" }) => {
                 const isOnline = onlineUsers.includes(user._id);
                 const lastMessage = getLastMessagePreview(user);
                 const lastTime = getLastMessageTime(user);
-                const hasUnread = Math.random() > 0.7; // Mock unread status
+                const hasUnread = hasUnreadMessages(user);
 
                 return (
                   <motion.button
