@@ -79,6 +79,10 @@ function DashboardPage() {
   const fetchDashboardStats = async () => {
     setLoading(true);
     try {
+      // Declare today variable at the beginning to avoid hoisting issues
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
       // Fetch individual stats from different endpoints
       const [usersRes, tasksRes, memosRes, messagesRes] = await Promise.all([
         axiosInstance.get('/messages/users').catch((err) => {
@@ -128,6 +132,7 @@ function DashboardPage() {
         }
       });
 
+      // Calculate stats
       // Debug final stats
       const finalStats = {
         employees: users.length,
@@ -139,10 +144,6 @@ function DashboardPage() {
         completedTasks: tasks.filter(task => task.status === 'completed').length
       };
       console.log('Final calculated stats:', finalStats);
-
-      // Calculate stats
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
 
       setStats({
         employees: users.length,

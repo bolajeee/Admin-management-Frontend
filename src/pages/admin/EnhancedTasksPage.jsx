@@ -133,9 +133,18 @@ const EnhancedTasksPage = () => {
   const fetchAttachments = async (taskId) => {
     try {
       const response = await axiosInstance.get(`/tasks/${taskId}/attachments`);
-      setAttachments(response.data.attachments || []);
+      const attachmentsData = response.data.attachments || response.data.data || response.data || [];
+      console.log('Attachments API response:', response.data);
+      console.log('Extracted attachments:', attachmentsData);
+      setAttachments(attachmentsData);
     } catch (error) {
       console.error('Error fetching attachments:', error);
+      // If attachments endpoint doesn't exist, try to get from task data
+      if (error.response?.status === 404) {
+        const taskAttachments = selectedTask?.attachments || [];
+        console.log('Using task attachments from task data:', taskAttachments);
+        setAttachments(taskAttachments);
+      }
     }
   };
 

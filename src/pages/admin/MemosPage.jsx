@@ -409,7 +409,7 @@ export default function MemosPage() {
           ) : (
             <ul className="space-y-3">
               {companyMemos.map((memo) => {
-                const isAcknowledged = acknowledgedMemos.includes(memo.id) || (memo.acknowledgments && memo.acknowledgments.some(a => a.user === authUser?._id && a.status === 'acknowledged'));
+                const isAcknowledged = acknowledgedMemos.includes(memo._id || memo.id) || (memo.acknowledgments && memo.acknowledgments.some(a => a.user === authUser?._id && a.status === 'acknowledged'));
                 const isAdmin = isUserAdmin(authUser);
                 const isCreator = memo.createdBy === authUser?._id || (typeof memo.createdBy === 'object' && memo.createdBy?._id === authUser?._id);
                 const isDeleted = memo.status === 'deleted';
@@ -418,7 +418,7 @@ export default function MemosPage() {
                 const statusProps = getMemoStatusProps(memo, snoozeAck);
 
                 return (
-                  <li key={memo.id} className={`p-4 rounded-lg border shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1 ${statusProps.bg} ${statusProps.border} ${isDeleted ? 'opacity-60 pointer-events-none' : ''}`}>
+                  <li key={memo._id || memo.id} className={`p-4 rounded-lg border shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1 ${statusProps.bg} ${statusProps.border} ${isDeleted ? 'opacity-60 pointer-events-none' : ''}`}>
                     <div className="flex items-center gap-3 mb-1">
                       {memo.createdBy && (
                         <UserAvatar user={typeof memo.createdBy === 'object' ? memo.createdBy : users.find(u => u._id === memo.createdBy)} size="w-8 h-8" textSize="text-xs" showTooltip={true} />
@@ -438,16 +438,24 @@ export default function MemosPage() {
                       ) : !isDeleted && (
                         <button
                           className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition disabled:opacity-50"
-                          onClick={() => markMemoAsRead(memo.id, authUser?._id)}
-                          disabled={memoActionLoading[memo.id]}
+                          onClick={() => {
+                            const memoId = memo._id || memo.id;
+                            console.log('Marking memo as read:', memoId, memo);
+                            if (memoId) {
+                              markMemoAsRead(memoId, authUser?._id);
+                            } else {
+                              console.error('No memo ID found:', memo);
+                            }
+                          }}
+                          disabled={memoActionLoading[memo._id || memo.id]}
                         >
-                          {memoActionLoading[memo.id] ? '...' : 'Mark as Read'}
+                          {memoActionLoading[memo._id || memo.id] ? '...' : 'Mark as Read'}
                         </button>
                       )}
                       {!isDeleted && (
                         <button
                           className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200 hover:bg-yellow-200 transition disabled:opacity-50"
-                          onClick={() => { setShowSnoozeModal(true); setSnoozingMemoId(memo.id); }}
+                          onClick={() => { setShowSnoozeModal(true); setSnoozingMemoId(memo._id || memo.id); }}
                           disabled={snoozing}
                         >
                           {snoozing ? '...' : 'Snooze'}
@@ -457,16 +465,16 @@ export default function MemosPage() {
                         <>
                           <button
                             className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-error/10 text-error border border-error/20 hover:bg-error/20 transition disabled:opacity-50"
-                            onClick={() => handleOpenDeleteModal(memo.id)}
-                            disabled={memoActionLoading[memo.id]}
+                            onClick={() => handleOpenDeleteModal(memo._id || memo.id)}
+                            disabled={memoActionLoading[memo._id || memo.id]}
                           >
                             Delete
                           </button>
                           <select
                             className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold border border-base-300 bg-base-100 disabled:opacity-50"
                             value={memo.status}
-                            disabled={statusUpdating[memo.id] || isDeleted}
-                            onChange={e => handleStatusChange(memo.id, e.target.value)}
+                            disabled={statusUpdating[memo._id || memo.id] || isDeleted}
+                            onChange={e => handleStatusChange(memo._id || memo.id, e.target.value)}
                           >
                             <option value="active">Active</option>
                             <option value="expired">Expired</option>
