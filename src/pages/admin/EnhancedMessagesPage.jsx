@@ -25,6 +25,7 @@ import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { axiosInstance } from '../../lib/axios';
 import UserAvatar from '../../components/ui/UserAvatar';
+import RoleBadge from '../../components/ui/RoleBadge';
 import toast from 'react-hot-toast';
 
 const EnhancedMessagesPage = () => {
@@ -295,9 +296,12 @@ const EnhancedMessagesPage = () => {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <p className="text-sm text-base-content/60 truncate">
-                        {user.role} • {user.department || 'No department'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <RoleBadge user={user} size="sm" />
+                        <span className="text-sm text-base-content/60">
+                          {user.department || 'No department'}
+                        </span>
+                      </div>
                       {user.unreadCount > 0 && (
                         <span className="badge badge-primary badge-sm">
                           {user.unreadCount}
@@ -519,7 +523,9 @@ const EnhancedMessagesPage = () => {
                 <h4 className="font-semibold text-base-content">
                   {selectedUser.name || selectedUser.email}
                 </h4>
-                <p className="text-sm text-base-content/60">{selectedUser.role}</p>
+                <div className="flex justify-center mt-2">
+                  <RoleBadge user={selectedUser} size="sm" />
+                </div>
               </div>
 
               <div className="space-y-4">

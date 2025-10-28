@@ -22,7 +22,9 @@ import {
 import DataTable from '../../components/ui/DataTable';
 import Modal, { FormModal, ConfirmationModal } from '../../components/ui/Modal';
 import UserAvatar from '../../components/ui/UserAvatar';
+import RoleBadge from '../../components/ui/RoleBadge';
 import { useAdminUsers } from '../../hooks/useAdminUsers';
+import { axiosInstance } from '../../lib/axios';
 import toast from 'react-hot-toast';
 
 const EnhancedEmployeesPage = () => {
@@ -38,9 +40,37 @@ const EnhancedEmployeesPage = () => {
     phone: '',
     status: 'active'
   });
+  const [roleMap, setRoleMap] = useState({});
 
   // Using existing hook
   const { users, loading, createUser, updateUser, deleteUser, toggleUserStatus } = useAdminUsers();
+
+  // Fetch role mappings
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await axiosInstance.get('/roles');
+        const roles = response.data.data || response.data.roles || response.data || [];
+        const mapping = {};
+        roles.forEach(role => {
+          if (role._id && role.name) {
+            mapping[role._id] = role.name;
+          }
+        });
+        setRoleMap(mapping);
+        console.log('Role mapping:', mapping);
+      } catch (error) {
+        console.log('Could not fetch roles, using default mapping:', error.response?.data);
+        // Set default role mapping if API fails
+        setRoleMap({
+          'admin': 'admin',
+          'employee': 'employee',
+          'manager': 'manager'
+        });
+      }
+    };
+    fetchRoles();
+  }, []);
 
   // Table columns configuration
   const columns = [
@@ -66,13 +96,10 @@ const EnhancedEmployeesPage = () => {
       key: 'role',
       label: 'Role',
       render: (role, user) => {
-        const roleText = typeof role === 'object' ? role.name : role;
-        const displayRole = roleText || (user.isAdmin ? 'admin' : 'employee');
-        return (
-          <span className={`badge ${displayRole === 'admin' ? 'badge-primary' : 'badge-secondary'}`}>
-            {displayRole.charAt(0).toUpperCase() + displayRole.slice(1)}
-          </span>
-        );
+        // Debug logging to see actual data structure
+        console.log('Role data:', { role, user: { id: user._id, email: user.email, isAdmin: user.isAdmin, role: user.role } });
+        
+        return <RoleBadge user={user} roleMap={roleMap} />;
       }
     },
     {

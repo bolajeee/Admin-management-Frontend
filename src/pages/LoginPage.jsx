@@ -5,6 +5,7 @@ import AuthImagePattern from "../components/AuthImagePattern";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare } from "lucide-react";
 import { axiosInstance } from "../lib/axios";
+import { isUserAdmin } from "../utils/roleUtils";
 import toast from "react-hot-toast";
 
 const LoginPage = () => {
@@ -27,8 +28,8 @@ const LoginPage = () => {
       setIsInitialCheck(false);
       return;
     }
-    if (authUser?.role && !isCheckingAuth) {
-      authUser.role === "admin"
+    if (authUser && !isCheckingAuth) {
+      isUserAdmin(authUser)
         ? navigate("/admin/dashboard")
         : navigate("/");
     }
@@ -40,7 +41,7 @@ const LoginPage = () => {
     try {
       const loggedInUser = await login(formData);
       if (loggedInUser) {
-        typeof loggedInUser.role === "object" && loggedInUser.role !== null
+        isUserAdmin(loggedInUser)
           ? navigate("/admin/dashboard")
           : navigate("/");
       } else {

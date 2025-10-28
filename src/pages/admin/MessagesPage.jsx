@@ -6,6 +6,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useChatStore } from '../../store/useChatStore';
 import ChatContainer from '../../components/ChatContainer';
 import UserAvatar from '../../components/ui/UserAvatar';
+import RoleBadge from '../../components/ui/RoleBadge';
 import { useUserDetails } from '../../hooks/useUserDetails';
 
 /**
@@ -215,7 +216,7 @@ export default function MessagesPage() {
                 <div className="font-bold text-lg">{detailsUser.name || detailsUser.email}</div>
                 <div className="text-xs text-base-content/60">{detailsUser.email}</div>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`text-xs px-2 py-1 rounded ${detailsUser.role === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>{detailsUser.role}</span>
+                  <RoleBadge user={detailsUser} size="sm" />
                   <span className={`text-xs px-2 py-1 rounded ${detailsUser.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>{detailsUser.isActive ? 'Active' : 'Inactive'}</span>
                   <span className="text-xs px-2 py-1 rounded bg-base-200 text-base-content/60">{detailsUser.online ? 'Online' : 'Offline'}</span>
                 </div>

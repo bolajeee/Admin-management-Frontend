@@ -19,6 +19,7 @@ import { useChatStore } from "../../store/useChatStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { axiosInstance } from "../../lib/axios";
 import UserAvatar from "../ui/UserAvatar";
+import RoleBadge from "../ui/RoleBadge";
 import toast from "react-hot-toast";
 
 const EnhancedSidebar = ({ searchTerm = "" }) => {
@@ -310,13 +311,7 @@ const EnhancedSidebar = ({ searchTerm = "" }) => {
 
                         {/* User Status/Role */}
                         <div className="flex items-center gap-2 mt-1">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            user.role === 'admin' 
-                              ? 'bg-primary/10 text-primary' 
-                              : 'bg-base-200 text-base-content/60'
-                          }`}>
-                            {user.role || 'User'}
-                          </span>
+                          <RoleBadge user={user} size="sm" className="text-xs" />
                           {isOnline && (
                             <span className="text-xs text-success font-medium">Online</span>
                           )}
@@ -326,9 +321,15 @@ const EnhancedSidebar = ({ searchTerm = "" }) => {
 
                     {/* Hover Actions */}
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-end gap-1 mt-2">
-                      <button className="btn btn-ghost btn-xs btn-circle">
+                      <div 
+                        className="btn btn-ghost btn-xs btn-circle cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Handle more actions here
+                        }}
+                      >
                         <MoreVertical className="h-3 w-3" />
-                      </button>
+                      </div>
                     </div>
                   </motion.button>
                 );

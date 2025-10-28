@@ -28,6 +28,7 @@ import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useTaskStore } from "../store/useTaskStore";
 import { useMemoStore } from "../store/useMemoStore";
+import { isUserAdmin } from "../utils/roleUtils";
 import UserAvatar from "../components/ui/UserAvatar";
 import EnhancedSidebar from "../components/layouts/EnhancedSidebar";
 import EnhancedChatContainer from "../components/layouts/EnhancedChatContainer";
@@ -132,7 +133,7 @@ const EnhancedHomePage = () => {
             <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300">
               <li><a href="/profile">Profile</a></li>
               <li><a href="/settings">Settings</a></li>
-              {authUser?.role === 'admin' && <li><a href="/admin">Admin Panel</a></li>}
+              {isUserAdmin(authUser) && <li><a href="/admin">Admin Panel</a></li>}
               <li><button className="text-error">Logout</button></li>
             </ul>
           </div>

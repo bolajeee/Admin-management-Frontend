@@ -9,6 +9,7 @@ import { useMemoStore } from '../../store/useMemoStore';
 import MemoModal from '../../components/modals/MemoModal';
 import { axiosInstance } from '../../lib/axios';
 import { useAuthStore } from '../../store/useAuthStore';
+import { isUserAdmin } from '../../utils/roleUtils';
 import toast from 'react-hot-toast';
 import { CheckCircle, Clock, Trash2, Info, XCircle } from 'lucide-react';
 import UserAvatar from '../../components/ui/UserAvatar';
@@ -409,7 +410,7 @@ export default function MemosPage() {
             <ul className="space-y-3">
               {companyMemos.map((memo) => {
                 const isAcknowledged = acknowledgedMemos.includes(memo.id) || (memo.acknowledgments && memo.acknowledgments.some(a => a.user === authUser?._id && a.status === 'acknowledged'));
-                const isAdmin = authUser?.role === 'admin' || authUser?.role?.name === 'admin';
+                const isAdmin = isUserAdmin(authUser);
                 const isCreator = memo.createdBy === authUser?._id || (typeof memo.createdBy === 'object' && memo.createdBy?._id === authUser?._id);
                 const isDeleted = memo.status === 'deleted';
                 const canDelete = isAdmin || (isCreator && !isDeleted);

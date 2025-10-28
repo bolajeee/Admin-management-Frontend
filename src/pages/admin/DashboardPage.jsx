@@ -81,16 +81,52 @@ function DashboardPage() {
     try {
       // Fetch individual stats from different endpoints
       const [usersRes, tasksRes, memosRes, messagesRes] = await Promise.all([
-        axiosInstance.get('/users').catch(() => ({ data: { users: [] } })),
-        axiosInstance.get('/tasks').catch(() => ({ data: { tasks: [] } })),
-        axiosInstance.get('/memos').catch(() => ({ data: { memos: [] } })),
-        axiosInstance.get('/messages/recent').catch(() => ({ data: { data: { messages: [] } } }))
+        axiosInstance.get('/messages/users').catch((err) => {
+          console.log('Users API error:', err.response?.data);
+          return { data: { data: [] } };
+        }),
+        axiosInstance.get('/tasks').catch((err) => {
+          console.log('Tasks API error:', err.response?.data);
+          return { data: { tasks: [] } };
+        }),
+        axiosInstance.get('/memos/all').catch((err) => {
+          console.log('Memos API error:', err.response?.data);
+          return { data: { data: [] } };
+        }),
+        axiosInstance.get('/messages/recent').catch((err) => {
+          console.log('Messages API error:', err.response?.data);
+          return { data: { data: { messages: [] } } };
+        })
       ]);
 
-      const users = usersRes.data.users || [];
-      const tasks = tasksRes.data.tasks || [];
-      const memos = memosRes.data.memos || [];
-      const messages = messagesRes.data.data?.messages || [];
+      const users = usersRes.data.data || usersRes.data.users || usersRes.data || [];
+      const tasks = tasksRes.data.tasks || tasksRes.data.data || tasksRes.data || [];
+      const memos = memosRes.data.memos || memosRes.data.data || memosRes.data || [];
+      const messages = messagesRes.data.data?.messages || messagesRes.data.messages || messagesRes.data || [];
+
+      // Debug logging
+      console.log('Dashboard API responses:', {
+        users: { 
+          count: users.length, 
+          sample: users[0],
+          rawResponse: usersRes.data
+        },
+        tasks: { 
+          count: tasks.length, 
+          sample: tasks[0],
+          rawResponse: tasksRes.data
+        },
+        memos: { 
+          count: memos.length, 
+          sample: memos[0],
+          rawResponse: memosRes.data
+        },
+        messages: { 
+          count: messages.length, 
+          sample: messages[0],
+          rawResponse: messagesRes.data
+        }
+      });
 
       // Calculate stats
       const today = new Date();
@@ -222,7 +258,20 @@ function DashboardPage() {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Page Header */}
-      <h1 className="text-2xl font-bold" aria-label="Dashboard">Dashboard</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold" aria-label="Dashboard">Dashboard</h1>
+        <button 
+          onClick={fetchDashboardStats}
+          className="btn btn-outline btn-sm"
+          disabled={loading}
+        >
+          {loading ? (
+            <span className="loading loading-spinner loading-sm"></span>
+          ) : (
+            'Refresh'
+          )}
+        </button>
+      </div>
 
       {/* Enhanced Dashboard Stats: Shows key metrics for admins */}
       <EnhancedDashboardStats stats={stats} loading={loading} />
