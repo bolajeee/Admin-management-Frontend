@@ -58,9 +58,8 @@ const EnhancedEmployeesPage = () => {
           }
         });
         setRoleMap(mapping);
-        console.log('Role mapping:', mapping);
       } catch (error) {
-        console.log('Could not fetch roles, using default mapping:', error.response?.data);
+        console.error('Could not fetch roles, using default mapping:', error.response?.data);
         // Set default role mapping if API fails
         setRoleMap({
           'admin': 'admin',
@@ -96,9 +95,6 @@ const EnhancedEmployeesPage = () => {
       key: 'role',
       label: 'Role',
       render: (role, user) => {
-        // Debug logging to see actual data structure
-        console.log('Role data:', { role, user: { id: user._id, email: user.email, isAdmin: user.isAdmin, role: user.role } });
-        
         return <RoleBadge user={user} roleMap={roleMap} />;
       }
     },

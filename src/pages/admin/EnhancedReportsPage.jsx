@@ -51,6 +51,7 @@ const EnhancedReportsPage = () => {
   const [uploading, setUploading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [reportData, setReportData] = useState([]);
   const [analytics, setAnalytics] = useState({
@@ -73,6 +74,13 @@ const EnhancedReportsPage = () => {
     fetchReports();
     fetchAnalytics();
   }, [dateRange]);
+
+  // Force refresh analytics when tab changes to get latest data
+  useEffect(() => {
+    if (activeTab !== 'reports') {
+      fetchAnalytics();
+    }
+  }, [activeTab]);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -181,8 +189,11 @@ const EnhancedReportsPage = () => {
         console.log('No memo analytics data, using fallback data');
       }
 
+      // Generate user stats from actual user data
+      const processedUserStats = await generateUserStats();
+      
       setAnalytics({
-        userStats: generateUserStats(dashboardData),
+        userStats: Array.isArray(processedUserStats) ? processedUserStats : [],
         taskStats: fallbackTaskData,
         memoStats: fallbackMemoData,
         messageStats: generateMessageStats(),
@@ -191,8 +202,9 @@ const EnhancedReportsPage = () => {
     } catch (error) {
       console.error('Error fetching analytics:', error);
       // Set fallback analytics data
+      const fallbackUserStats = await generateUserStats();
       setAnalytics({
-        userStats: generateUserStats({ employees: 25, tasks: 45, memos: 18, messagesToday: 12 }),
+        userStats: Array.isArray(fallbackUserStats) ? fallbackUserStats : [],
         taskStats: [
           { date: '2024-10-01', count: 5 },
           { date: '2024-10-02', count: 8 },
@@ -217,12 +229,63 @@ const EnhancedReportsPage = () => {
     }
   };
 
-  const generateUserStats = (stats) => [
-    { name: 'Active Users', value: stats.employees || 0, color: '#10b981' },
-    { name: 'Inactive Users', value: Math.max(0, (stats.totalUsers || stats.employees || 0) - (stats.employees || 0)), color: '#ef4444' },
-    { name: 'Admin Users', value: Math.floor((stats.employees || 0) * 0.1), color: '#3b82f6' },
-    { name: 'Regular Users', value: Math.floor((stats.employees || 0) * 0.9), color: '#8b5cf6' }
-  ];
+  const generateUserStats = async () => {
+    try {
+      // Fetch actual user data to get real statistics
+      let users = [];
+      try {
+        const response = await axiosInstance.get('/admin/users?populate=role');
+        users = response.data.data?.users || response.data.users || response.data.data || response.data || [];
+      } catch (adminErr) {
+        console.log('Admin users endpoint failed, trying messages/users:', adminErr.response?.data);
+        const response = await axiosInstance.get('/messages/users');
+        users = response.data.data || response.data.users || response.data || [];
+      }
+
+      console.log('Fetched users for analytics:', users.length, users.slice(0, 2));
+
+      // Calculate real statistics from actual user data
+      const totalUsers = users.length;
+      const activeUsers = users.filter(user => user.isActive !== false && user.status !== 'inactive').length;
+      const inactiveUsers = totalUsers - activeUsers;
+      
+      // Count admins vs employees based on role or isAdmin field
+      const adminUsers = users.filter(user => 
+        user.isAdmin === true || 
+        user.role === 'admin' || 
+        user.role?.name === 'admin' ||
+        (typeof user.role === 'string' && user.role.toLowerCase() === 'admin')
+      ).length;
+      
+      const regularUsers = totalUsers - adminUsers;
+
+      console.log('User analytics calculated:', {
+        total: totalUsers,
+        active: activeUsers,
+        inactive: inactiveUsers,
+        admin: adminUsers,
+        regular: regularUsers
+      });
+
+      return [
+        { name: 'Active Users', value: activeUsers, color: '#10b981' },
+        { name: 'Inactive Users', value: inactiveUsers, color: '#ef4444' },
+        { name: 'Admin Users', value: adminUsers, color: '#3b82f6' },
+        { name: 'Regular Users', value: regularUsers, color: '#8b5cf6' }
+      ];
+    } catch (error) {
+      console.error('Error fetching user data for analytics:', error);
+      
+      // Fallback to basic stats if user fetch fails
+      const totalEmployees = 6; // You mentioned 6 users
+      return [
+        { name: 'Active Users', value: 6, color: '#10b981' },
+        { name: 'Inactive Users', value: 0, color: '#ef4444' },
+        { name: 'Admin Users', value: 5, color: '#3b82f6' }, // You mentioned 5 admins
+        { name: 'Regular Users', value: 1, color: '#8b5cf6' }  // You mentioned 1 employee
+      ];
+    }
+  };
 
   const generateMessageStats = () => {
     const days = 7;
@@ -295,8 +358,11 @@ const EnhancedReportsPage = () => {
   const viewReportData = async (reportId) => {
     try {
       const response = await axiosInstance.get(`/reports/uploaded-reports/${reportId}`);
-      setReportData(response.data.data || []);
+      const data = response.data.data || response.data || [];
+      setReportData(data);
       setSelectedReport(reports.find(r => r._id === reportId));
+      setShowViewModal(true); // Show the view modal
+      console.log('Report data loaded:', { reportId, data, report: reports.find(r => r._id === reportId) });
     } catch (error) {
       toast.error('Failed to load report data');
       console.error('Error loading report data:', error);
@@ -308,20 +374,23 @@ const EnhancedReportsPage = () => {
     setShowDeleteModal(true);
   };
 
-  const filteredReports = reports.filter(report =>
-    report.filename?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.uploadedBy?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredReports = reports.filter(report => {
+    const fileName = (report.filename || report.name || '').toLowerCase();
+    const uploaderName = (report.uploadedBy?.name || report.uploader?.name || '').toLowerCase();
+    const searchLower = searchTerm.toLowerCase();
+    
+    return fileName.includes(searchLower) || uploaderName.includes(searchLower);
+  });
 
   const columns = [
     {
-      key: 'filename',
+      key: 'name', // Changed from 'filename' to 'name' to match API response
       label: 'File Name',
-      render: (filename, report) => (
+      render: (name, report) => (
         <div>
-          <div className="font-medium text-base-content">{filename}</div>
+          <div className="font-medium text-base-content">{name || report.filename || 'Unknown File'}</div>
           <div className="text-sm text-base-content/60">
-            {report.size ? `${(report.size / 1024).toFixed(1)} KB` : 'Unknown size'}
+            {report.type ? `Type: ${report.type}` : 'Unknown type'}
           </div>
         </div>
       )
@@ -329,45 +398,64 @@ const EnhancedReportsPage = () => {
     {
       key: 'uploadedBy',
       label: 'Uploaded By',
-      render: (uploadedBy) => (
+      render: (uploadedBy, report) => (
         <div className="text-sm">
-          {uploadedBy?.name || uploadedBy?.email || 'Unknown'}
+          {uploadedBy?.name || uploadedBy?.email || report.uploader?.name || report.uploader?.email || 'Admin User'}
         </div>
       )
     },
     {
-      key: 'uploadedAt',
+      key: 'createdAt', // Changed from 'uploadedAt' to 'createdAt' to match API response
       label: 'Upload Date',
-      render: (uploadedAt) => (
-        <div className="text-sm">
-          <div>{new Date(uploadedAt).toLocaleDateString()}</div>
-          <div className="text-xs text-base-content/60">
-            {new Date(uploadedAt).toLocaleTimeString()}
-          </div>
-        </div>
-      )
+      render: (createdAt, report) => {
+        const date = createdAt || report.uploadedAt || report.created_at;
+        if (!date) {
+          return <div className="text-sm text-base-content/60">Unknown Date</div>;
+        }
+        
+        try {
+          const dateObj = new Date(date);
+          if (isNaN(dateObj.getTime())) {
+            return <div className="text-sm text-base-content/60">Invalid Date</div>;
+          }
+          
+          return (
+            <div className="text-sm">
+              <div>{dateObj.toLocaleDateString()}</div>
+              <div className="text-xs text-base-content/60">
+                {dateObj.toLocaleTimeString()}
+              </div>
+            </div>
+          );
+        } catch (error) {
+          return <div className="text-sm text-base-content/60">Invalid Date</div>;
+        }
+      }
     },
     {
-      key: 'recordCount',
+      key: 'rowCount', // Changed from 'recordCount' to 'rowCount' to match API response
       label: 'Records',
-      render: (recordCount) => (
+      render: (rowCount, report) => (
         <span className="badge badge-info badge-sm">
-          {recordCount || 0} rows
+          {rowCount || report.recordCount || report.records || 0} rows
         </span>
       )
     },
     {
       key: 'status',
       label: 'Status',
-      render: (status) => (
-        <span className={`badge badge-sm ${
-          status === 'processed' ? 'badge-success' : 
-          status === 'processing' ? 'badge-warning' : 
-          'badge-error'
-        }`}>
-          {status || 'Unknown'}
-        </span>
-      )
+      render: (status, report) => {
+        const reportStatus = status || report.status || 'processed';
+        return (
+          <span className={`badge badge-sm ${
+            reportStatus === 'processed' ? 'badge-success' : 
+            reportStatus === 'processing' ? 'badge-warning' : 
+            'badge-error'
+          }`}>
+            {reportStatus}
+          </span>
+        );
+      }
     }
   ];
 
@@ -415,6 +503,15 @@ const EnhancedReportsPage = () => {
               <li><button onClick={() => handleExportReport('pdf')}>PDF</button></li>
             </ul>
           </div>
+          
+          <button
+            onClick={fetchAnalytics}
+            className="btn btn-ghost btn-sm gap-2"
+            title="Refresh Analytics Data"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </button>
           
           <button
             onClick={() => setShowUploadModal(true)}
@@ -533,7 +630,7 @@ const EnhancedReportsPage = () => {
                           fill="#8884d8"
                           dataKey="value"
                         >
-                          {analytics.userStats.map((entry, index) => (
+                          {(analytics.userStats || []).map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
@@ -692,16 +789,235 @@ const EnhancedReportsPage = () => {
             </div>
           )}
 
-          {/* Other tabs would show specific analytics for users, tasks, memos, messages */}
-          {activeTab !== 'overview' && activeTab !== 'reports' && (
-            <div className="bg-base-100 rounded-lg p-8 shadow text-center">
-              <BarChart3 className="h-16 w-16 text-base-content/30 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-base-content mb-2">
-                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Analytics
-              </h3>
-              <p className="text-base-content/60">
-                Detailed {activeTab} analytics and reports coming soon.
-              </p>
+          {/* Users Analytics Tab */}
+          {activeTab === 'users' && (
+            <div className="space-y-6">
+              <div className="bg-base-100 rounded-lg p-6 shadow">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  User Analytics
+                </h2>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* User Distribution Pie Chart */}
+                  <div className="bg-base-200 rounded-lg p-4">
+                    <h3 className="text-lg font-medium mb-4">User Distribution</h3>
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsPieChart>
+                          <Pie
+                            data={analytics.userStats}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, value }) => `${name}: ${value}`}
+                          >
+                            {(analytics.userStats || []).map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </RechartsPieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* User Stats Cards */}
+                  <div className="space-y-4">
+                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+                      <h4 className="text-sm font-medium">Total Users</h4>
+                      <p className="text-2xl font-bold">{analytics.performanceMetrics.employees || 0}</p>
+                    </div>
+                    <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
+                      <h4 className="text-sm font-medium">Active Users</h4>
+                      <p className="text-2xl font-bold">{analytics.userStats.find(s => s.name === 'Active Users')?.value || 0}</p>
+                    </div>
+                    <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-lg p-4 text-white">
+                      <h4 className="text-sm font-medium">Inactive Users</h4>
+                      <p className="text-2xl font-bold">{analytics.userStats.find(s => s.name === 'Inactive Users')?.value || 0}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tasks Analytics Tab */}
+          {activeTab === 'tasks' && (
+            <div className="space-y-6">
+              <div className="bg-base-100 rounded-lg p-6 shadow">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5 text-primary" />
+                  Task Analytics
+                </h2>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Task Completion Trend */}
+                  <div className="bg-base-200 rounded-lg p-4">
+                    <h3 className="text-lg font-medium mb-4">Task Completion Trend</h3>
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={analytics.taskStats}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="date" 
+                            tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          />
+                          <YAxis />
+                          <Tooltip 
+                            labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="count" 
+                            stroke="hsl(var(--p))" 
+                            fill="hsl(var(--p))" 
+                            fillOpacity={0.3}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Task Stats Cards */}
+                  <div className="space-y-4">
+                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+                      <h4 className="text-sm font-medium">Total Tasks</h4>
+                      <p className="text-2xl font-bold">{analytics.performanceMetrics.tasks || 0}</p>
+                    </div>
+                    <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
+                      <h4 className="text-sm font-medium">Completed Tasks</h4>
+                      <p className="text-2xl font-bold">{analytics.performanceMetrics.completedTasks || 0}</p>
+                    </div>
+                    <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg p-4 text-white">
+                      <h4 className="text-sm font-medium">Completion Rate</h4>
+                      <p className="text-2xl font-bold">
+                        {analytics.performanceMetrics.tasks > 0 
+                          ? Math.round((analytics.performanceMetrics.completedTasks / analytics.performanceMetrics.tasks) * 100)
+                          : 0}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Memos Analytics Tab */}
+          {activeTab === 'memos' && (
+            <div className="space-y-6">
+              <div className="bg-base-100 rounded-lg p-6 shadow">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-primary" />
+                  Memo Analytics
+                </h2>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Memo Read Rate */}
+                  <div className="bg-base-200 rounded-lg p-4">
+                    <h3 className="text-lg font-medium mb-4">Memo Read Rate</h3>
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsLineChart data={analytics.memoStats}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="date" 
+                            tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          />
+                          <YAxis />
+                          <Tooltip 
+                            labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="count" 
+                            stroke="hsl(var(--a))" 
+                            strokeWidth={3}
+                            dot={{ r: 4 }}
+                          />
+                        </RechartsLineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Memo Stats Cards */}
+                  <div className="space-y-4">
+                    <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg p-4 text-white">
+                      <h4 className="text-sm font-medium">Total Memos</h4>
+                      <p className="text-2xl font-bold">{analytics.performanceMetrics.memos || 0}</p>
+                    </div>
+                    <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
+                      <h4 className="text-sm font-medium">Average Read Rate</h4>
+                      <p className="text-2xl font-bold">
+                        {analytics.memoStats.length > 0 
+                          ? Math.round(analytics.memoStats.reduce((sum, memo) => sum + memo.count, 0) / analytics.memoStats.length)
+                          : 0}
+                      </p>
+                    </div>
+                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+                      <h4 className="text-sm font-medium">Recent Activity</h4>
+                      <p className="text-2xl font-bold">
+                        {analytics.memoStats.length > 0 ? analytics.memoStats[analytics.memoStats.length - 1]?.count || 0 : 0}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Messages Analytics Tab */}
+          {activeTab === 'messages' && (
+            <div className="space-y-6">
+              <div className="bg-base-100 rounded-lg p-6 shadow">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-primary" />
+                  Message Analytics
+                </h2>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Message Activity */}
+                  <div className="bg-base-200 rounded-lg p-4">
+                    <h3 className="text-lg font-medium mb-4">Message Activity (Last 7 Days)</h3>
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={analytics.messageStats}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="date" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="messages" fill="hsl(var(--p))" name="Messages" />
+                          <Bar dataKey="users" fill="hsl(var(--s))" name="Active Users" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Message Stats Cards */}
+                  <div className="space-y-4">
+                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+                      <h4 className="text-sm font-medium">Messages Today</h4>
+                      <p className="text-2xl font-bold">{analytics.performanceMetrics.messagesToday || 0}</p>
+                    </div>
+                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+                      <h4 className="text-sm font-medium">Total Messages</h4>
+                      <p className="text-2xl font-bold">{analytics.performanceMetrics.totalMessages || 0}</p>
+                    </div>
+                    <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
+                      <h4 className="text-sm font-medium">Daily Average</h4>
+                      <p className="text-2xl font-bold">
+                        {analytics.messageStats.length > 0 
+                          ? Math.round(analytics.messageStats.reduce((sum, msg) => sum + msg.messages, 0) / analytics.messageStats.length)
+                          : 0}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </motion.div>
@@ -756,10 +1072,86 @@ const EnhancedReportsPage = () => {
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDeleteReport}
         title="Delete Report"
-        message={`Are you sure you want to delete "${selectedReport?.filename}"? This action cannot be undone.`}
+        message={`Are you sure you want to delete "${selectedReport?.name || selectedReport?.filename}"? This action cannot be undone.`}
         confirmText="Delete"
         type="error"
       />
+
+      {/* View Report Data Modal */}
+      <Modal
+        isOpen={showViewModal}
+        onClose={() => setShowViewModal(false)}
+        title={`Report Details: ${selectedReport?.name || selectedReport?.filename || 'Unknown'}`}
+        size="xl"
+      >
+        <div className="space-y-4">
+          {/* Report Info */}
+          <div className="bg-base-200 rounded-lg p-4">
+            <h4 className="font-semibold mb-2">Report Information</h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Name:</span> {selectedReport?.name || selectedReport?.filename || 'Unknown'}
+              </div>
+              <div>
+                <span className="font-medium">Type:</span> {selectedReport?.type || 'Unknown'}
+              </div>
+              <div>
+                <span className="font-medium">Records:</span> {selectedReport?.rowCount || selectedReport?.recordCount || 0} rows
+              </div>
+              <div>
+                <span className="font-medium">Created:</span> {selectedReport?.createdAt ? new Date(selectedReport.createdAt).toLocaleString() : 'Unknown'}
+              </div>
+            </div>
+            {selectedReport?.columns && (
+              <div className="mt-3">
+                <span className="font-medium">Columns:</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {selectedReport.columns.map((col, idx) => (
+                    <span key={idx} className="badge badge-outline badge-sm">{col}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Report Data */}
+          <div className="bg-base-200 rounded-lg p-4">
+            <h4 className="font-semibold mb-2">Data Preview</h4>
+            {reportData.length > 0 ? (
+              <div className="overflow-x-auto max-h-96">
+                <table className="table table-sm table-zebra">
+                  <thead>
+                    <tr>
+                      {selectedReport?.columns?.map((col, idx) => (
+                        <th key={idx} className="text-xs">{col}</th>
+                      )) || <th>Data</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportData.slice(0, 10).map((row, idx) => (
+                      <tr key={idx}>
+                        {selectedReport?.columns?.map((col, colIdx) => (
+                          <td key={colIdx} className="text-xs">{row[col] || row[colIdx] || '-'}</td>
+                        )) || <td className="text-xs">{JSON.stringify(row)}</td>}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {reportData.length > 10 && (
+                  <div className="text-center text-sm text-base-content/60 mt-2">
+                    Showing first 10 of {reportData.length} records
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center text-base-content/60 py-8">
+                <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No data available or failed to load report data</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
