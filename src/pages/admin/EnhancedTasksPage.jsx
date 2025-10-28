@@ -92,9 +92,11 @@ const EnhancedTasksPage = () => {
     setLoading(true);
     try {
       const response = await axiosInstance.get('/tasks');
-      setTasks(response.data.tasks || []);
+      const tasksData = response.data.tasks || response.data.data || response.data || [];
+      console.log('Tasks API response:', response.data);
+      console.log('Extracted tasks:', tasksData);
+      setTasks(tasksData);
     } catch (error) {
-      toast.error('Failed to fetch tasks');
       console.error('Error fetching tasks:', error);
     } finally {
       setLoading(false);
@@ -334,6 +336,11 @@ const EnhancedTasksPage = () => {
   };
 
   const filteredTasks = tasks.filter(task => {
+    if (!task || !task.title) {
+      console.warn('Invalid task object:', task);
+      return false;
+    }
+    
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          task.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -344,6 +351,9 @@ const EnhancedTasksPage = () => {
     }
     return matchesSearch && task.status === filter;
   });
+
+  // Debug filtered tasks
+  console.log('Filtered tasks:', filteredTasks.length, filteredTasks);
 
   const columns = [
     {

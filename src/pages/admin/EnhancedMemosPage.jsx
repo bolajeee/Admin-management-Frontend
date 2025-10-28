@@ -71,9 +71,11 @@ const EnhancedMemosPage = () => {
     setLoading(true);
     try {
       const response = await axiosInstance.get('/memos/all');
-      setMemos(response.data.memos || []);
+      const memosData = response.data.memos || response.data.data || response.data || [];
+      console.log('Memos API response:', response.data);
+      console.log('Extracted memos:', memosData);
+      setMemos(memosData);
     } catch (error) {
-      toast.error('Failed to fetch memos');
       console.error('Error fetching memos:', error);
     } finally {
       setLoading(false);
@@ -261,13 +263,21 @@ const EnhancedMemosPage = () => {
   };
 
   const filteredMemos = memos.filter(memo => {
+    if (!memo || !memo.title) {
+      console.warn('Invalid memo object:', memo);
+      return false;
+    }
+    
     const matchesSearch = memo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         memo.content.toLowerCase().includes(searchTerm.toLowerCase());
+                         memo.content?.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (filter === 'all') return matchesSearch;
     if (filter === 'unread') return matchesSearch && !memo.isRead;
     return matchesSearch && memo.severity === filter;
   });
+
+  // Debug filtered memos
+  console.log('Filtered memos:', filteredMemos.length, filteredMemos);
 
   const columns = [
     {

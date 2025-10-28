@@ -267,10 +267,17 @@ const DataTable = ({
                   {actions && (
                     <td>
                       <div className="dropdown dropdown-end">
-                        <button tabIndex={0} className="btn btn-ghost btn-sm">
+                        <button 
+                          tabIndex={0} 
+                          className="btn btn-ghost btn-sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.focus();
+                          }}
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </button>
-                        <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                        <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-300">
                           {onView && (
                             <li>
                               <button onClick={() => onView(item)} className="flex items-center gap-2">

@@ -128,6 +128,18 @@ function DashboardPage() {
         }
       });
 
+      // Debug final stats
+      const finalStats = {
+        employees: users.length,
+        tasks: tasks.length,
+        memos: memos.length,
+        messagesToday: messages.filter(msg => 
+          new Date(msg.createdAt) >= today
+        ).length,
+        completedTasks: tasks.filter(task => task.status === 'completed').length
+      };
+      console.log('Final calculated stats:', finalStats);
+
       // Calculate stats
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -175,8 +187,16 @@ function DashboardPage() {
         axiosInstance.get('/tasks/analytics/completed'),
         axiosInstance.get('/memos/analytics/read'),
       ]);
-      setTasksCompletedData(tasksRes.data.data || []);
-      setMemosReadData(memosRes.data.data || []);
+      const tasksData = tasksRes.data.data || tasksRes.data || [];
+      const memosData = memosRes.data.data || memosRes.data || [];
+      
+      console.log('Analytics API responses:', {
+        tasks: { raw: tasksRes.data, processed: tasksData },
+        memos: { raw: memosRes.data, processed: memosData }
+      });
+      
+      setTasksCompletedData(tasksData);
+      setMemosReadData(memosData);
     } catch (err) {
       console.error('Error fetching analytics data:', err);
       setTasksCompletedData([]);
