@@ -13,10 +13,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { axiosInstance } from '../../lib/axios';
-import DashboardStats from '../../components/dashboard/DashboardStats';
 import EnhancedDashboardStats from '../../components/dashboard/EnhancedDashboardStats';
 import QuickActionsPanel from '../../components/dashboard/QuickActionsPanel';
-import QuickActions from '../../components/dashboard/QuickActions';
 import MemoModal from '../../components/modals/MemoModal';
 import TaskModal from '../../components/modals/TaskModal';
 import { useTaskStore } from '../../store/useTaskStore';
@@ -81,26 +79,41 @@ function DashboardPage() {
   const fetchDashboardStats = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get('/dashboard/stats');
-      setStats({
-        ...response.data,
-        messagesToday: 0 // This will be updated below if possible
-      });
+      // Fetch individual stats from different endpoints
+      const [usersRes, tasksRes, memosRes, messagesRes] = await Promise.all([
+        axiosInstance.get('/users').catch(() => ({ data: { users: [] } })),
+        axiosInstance.get('/tasks').catch(() => ({ data: { tasks: [] } })),
+        axiosInstance.get('/memos').catch(() => ({ data: { memos: [] } })),
+        axiosInstance.get('/messages/recent').catch(() => ({ data: { data: { messages: [] } } }))
+      ]);
 
-      // Try to fetch messages count
-      try {
-        const messagesResponse = await axiosInstance.get('/messages/today');
-        if (messagesResponse.data && typeof messagesResponse.data.count === 'number') {
-          setStats(prev => ({
-            ...prev,
-            messagesToday: messagesResponse.data.count
-          }));
-        }
-      } catch (msgError) {
-        toast.error('Error getting today messages count:');
-      }
+      const users = usersRes.data.users || [];
+      const tasks = tasksRes.data.tasks || [];
+      const memos = memosRes.data.memos || [];
+      const messages = messagesRes.data.data?.messages || [];
+
+      // Calculate stats
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      setStats({
+        employees: users.length,
+        tasks: tasks.length,
+        memos: memos.length,
+        messagesToday: messages.filter(msg => 
+          new Date(msg.createdAt) >= today
+        ).length,
+        completedTasks: tasks.filter(task => task.status === 'completed').length
+      });
     } catch (error) {
-      toast.error('Error fetching dashboard stats:');
+      console.error('Error fetching dashboard stats:', error);
+      setStats({
+        employees: 0,
+        tasks: 0,
+        memos: 0,
+        messagesToday: 0,
+        completedTasks: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -112,7 +125,7 @@ function DashboardPage() {
       const response = await axiosInstance.get('/admin/suggested-actions');
       setActions(response.data.actions);
     } catch (error) {
-      toast.error('Error fetching suggested actions:');
+      console.error('Error fetching suggested actions:', error);
       setActions([]);
     } finally {
       setLoadingActions(false);
@@ -129,7 +142,7 @@ function DashboardPage() {
       setTasksCompletedData(tasksRes.data.data || []);
       setMemosReadData(memosRes.data.data || []);
     } catch (err) {
-      toast.error('Error fetching analytics data:');
+      console.error('Error fetching analytics data:', err);
       setTasksCompletedData([]);
       setMemosReadData([]);
     } finally {
@@ -143,7 +156,7 @@ function DashboardPage() {
       const res = await axiosInstance.get('/dashboard/recent-activity');
       setRecentActivity(res.data.data || []);
     } catch (err) {
-      toast.error('Error fetching recent activity:');
+      console.error('Error fetching recent activity:', err);
       setRecentActivity([]);
     } finally {
       setRecentActivityLoading(false);
@@ -346,47 +359,35 @@ function DashboardPage() {
         </div>
       </div>
 
-      {/* Enhanced Quick Actions Panel */}
-      <QuickActionsPanel 
-        onAction={(actionId) => {
-          switch(actionId) {
-            case 'add-user':
-              handleAddUser();
-              break;
-            case 'send-memo':
-              handleSendMemo();
-              break;
-            case 'create-task':
-              handleCreateTask();
-              break;
-            case 'view-messages':
-              navigate('/admin/messages');
-              break;
-            case 'generate-report':
-              navigate('/admin/reports');
-              break;
-            case 'manage-users':
-              navigate('/admin/employees');
-              break;
-            default:
-              console.log('Action not implemented:', actionId);
-          }
-        }}
-      />
-
       {/* Quick Actions and Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Legacy Quick Actions - keeping for comparison */}
-        <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow">
-          <QuickActions
-            actions={actions}
-            loading={loadingActions}
-            onAddUser={handleAddUser}
-            onSendMemo={handleSendMemo}
-            onCreateTask={handleCreateTask}
-            navigate={navigate}
-          />
-        </div>
+        {/* Enhanced Quick Actions Panel */}
+        <QuickActionsPanel 
+          onAction={(actionId) => {
+            switch(actionId) {
+              case 'add-user':
+                handleAddUser();
+                break;
+              case 'send-memo':
+                handleSendMemo();
+                break;
+              case 'create-task':
+                handleCreateTask();
+                break;
+              case 'view-messages':
+                navigate('/admin/messages');
+                break;
+              case 'generate-report':
+                navigate('/admin/reports');
+                break;
+              case 'manage-users':
+                navigate('/admin/employees');
+                break;
+              default:
+                console.log('Action not implemented:', actionId);
+            }
+          }}
+        />
 
         {/* Recent Activity: Feed of latest admin actions */}
         <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow">

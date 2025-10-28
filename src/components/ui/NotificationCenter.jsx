@@ -14,74 +14,78 @@ import {
   Filter,
   MoreVertical
 } from 'lucide-react';
+import { useAuthStore } from '../../store/useAuthStore';
+import { axiosInstance } from '../../lib/axios';
+import toast from 'react-hot-toast';
 
 const NotificationCenter = ({ isOpen, onClose }) => {
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(false);
+  const { authUser } = useAuthStore();
 
-  // Mock notifications - replace with actual API call
+  // Fetch real notifications from backend
   useEffect(() => {
     if (isOpen) {
-      setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setNotifications([
-          {
-            id: 1,
-            type: 'task',
-            title: 'New Task Assigned',
-            message: 'You have been assigned a new task: "Update user documentation"',
-            timestamp: new Date(Date.now() - 5 * 60 * 1000),
-            read: false,
-            priority: 'high',
-            actionUrl: '/admin/tasks/123'
-          },
-          {
-            id: 2,
-            type: 'memo',
-            title: 'Company Memo',
-            message: 'New company policy regarding remote work has been published',
-            timestamp: new Date(Date.now() - 30 * 60 * 1000),
-            read: false,
-            priority: 'medium',
-            actionUrl: '/admin/memos/456'
-          },
-          {
-            id: 3,
-            type: 'message',
-            title: 'New Message',
-            message: 'John Doe sent you a message',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-            read: true,
-            priority: 'low',
-            actionUrl: '/admin/messages/789'
-          },
-          {
-            id: 4,
-            type: 'system',
-            title: 'System Update',
-            message: 'System maintenance scheduled for tonight at 2 AM',
-            timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
-            read: true,
-            priority: 'medium',
-            actionUrl: null
-          },
-          {
-            id: 5,
-            type: 'user',
-            title: 'New User Registration',
-            message: 'Sarah Wilson has registered and is pending approval',
-            timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
-            read: false,
-            priority: 'low',
-            actionUrl: '/admin/employees'
-          }
-        ]);
-        setLoading(false);
-      }, 1000);
+      fetchNotifications();
     }
   }, [isOpen]);
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      // For now, create notifications from recent activities
+      const [tasksRes, memosRes, messagesRes] = await Promise.all([
+        axiosInstance.get('/tasks').catch(() => ({ data: { tasks: [] } })),
+        axiosInstance.get('/memos/user').catch(() => ({ data: { memos: [] } })),
+        axiosInstance.get('/messages/recent').catch(() => ({ data: { data: { messages: [] } } }))
+      ]);
+
+      const tasks = tasksRes.data.tasks || [];
+      const memos = memosRes.data.memos || [];
+      const messages = messagesRes.data.data?.messages || [];
+
+      const taskNotifications = tasks.slice(0, 3).map(task => ({
+        id: `task-${task._id}`,
+        type: 'task',
+        title: 'Task Update',
+        message: `Task "${task.title}" status: ${task.status}`,
+        timestamp: new Date(task.updatedAt || task.createdAt),
+        read: false,
+        priority: task.priority,
+        actionUrl: `/admin/tasks`
+      }));
+
+      const memoNotifications = memos.slice(0, 2).map(memo => ({
+        id: `memo-${memo._id}`,
+        type: 'memo',
+        title: 'New Memo',
+        message: memo.title,
+        timestamp: new Date(memo.createdAt),
+        read: memo.readBy?.some(r => r.user === authUser._id) || false,
+        priority: memo.severity,
+        actionUrl: `/admin/memos`
+      }));
+
+      const messageNotifications = messages.slice(0, 2).map(msg => ({
+        id: `message-${msg._id}`,
+        type: 'message',
+        title: 'New Message',
+        message: `Message from ${msg.sender?.name || 'User'}`,
+        timestamp: new Date(msg.createdAt),
+        read: !!msg.readAt,
+        priority: 'medium',
+        actionUrl: `/admin/messages`
+      }));
+
+      setNotifications([...taskNotifications, ...memoNotifications, ...messageNotifications]);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getNotificationIcon = (type) => {
     const icons = {

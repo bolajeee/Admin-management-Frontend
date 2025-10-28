@@ -176,7 +176,7 @@ export default function AdminLayout() {
       {/* Main content area */}
       <div className="flex flex-1 flex-col h-screen overflow-x-hidden md:ml-72">
         {/* Header with breadcrumbs */}
-        <header className="h-16 flex items-center justify-between px-6 border-b border-base-300 bg-base-100/80 backdrop-blur z-30 shadow-sm">
+        <header className="h-16 flex items-center justify-between px-6 border-b border-base-300 bg-base-100/80 backdrop-blur z-30 shadow-sm sticky top-0">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold text-primary">
               {/* Show current section name or fallback */}
@@ -223,7 +223,7 @@ export default function AdminLayout() {
 
         {/* Main content outlet for admin pages */}
         <main className="flex-1 overflow-y-auto bg-base-100">
-          <div className="p-6">
+          <div className="p-6 max-w-7xl mx-auto">
             {/* Renders the current admin page */}
             <Outlet />
           </div>

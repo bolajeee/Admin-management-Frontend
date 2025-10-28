@@ -48,8 +48,14 @@ const EnhancedHomePage = () => {
       setIsRightPanelOpen(window.innerWidth >= 1280);
     };
 
+    // Make search function available globally for sidebar
+    window.updateSearchTerm = setSearchTerm;
+
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      delete window.updateSearchTerm;
+    };
   }, []);
 
   const quickActions = [
@@ -108,32 +114,6 @@ const EnhancedHomePage = () => {
 
         {/* Right Actions */}
         <div className="flex items-center gap-2">
-          {/* Quick Actions */}
-          <div className="dropdown dropdown-end">
-            <button
-              tabIndex={0}
-              className="btn btn-ghost btn-circle btn-sm"
-              onClick={() => setShowQuickActions(!showQuickActions)}
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-            <ul
-              tabIndex={0}
-              className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300"
-            >
-              {quickActions.map((action) => {
-                const IconComponent = action.icon;
-                return (
-                  <li key={action.id}>
-                    <button className="flex items-center gap-3">
-                      <IconComponent className={`h-4 w-4 ${action.color}`} />
-                      {action.label}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
 
           {/* Right Panel Toggle */}
           <button

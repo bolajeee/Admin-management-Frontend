@@ -135,15 +135,6 @@ const EnhancedChatContainer = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="btn btn-ghost btn-sm btn-circle">
-              <Search className="h-4 w-4" />
-            </button>
-            <button className="btn btn-ghost btn-sm btn-circle">
-              <Phone className="h-4 w-4" />
-            </button>
-            <button className="btn btn-ghost btn-sm btn-circle">
-              <Video className="h-4 w-4" />
-            </button>
             <button
               onClick={() => setShowUserInfo(!showUserInfo)}
               className="btn btn-ghost btn-sm btn-circle"
@@ -346,21 +337,7 @@ const EnhancedChatContainer = () => {
           </div>
         </form>
 
-        {/* Quick Actions */}
-        <div className="flex items-center gap-2 mt-2">
-          <button className="btn btn-ghost btn-xs gap-1">
-            <File className="h-3 w-3" />
-            File
-          </button>
-          <button className="btn btn-ghost btn-xs gap-1">
-            <Image className="h-3 w-3" />
-            Photo
-          </button>
-          <button className="btn btn-ghost btn-xs gap-1">
-            <Mic className="h-3 w-3" />
-            Voice
-          </button>
-        </div>
+
       </motion.div>
     </div>
   );

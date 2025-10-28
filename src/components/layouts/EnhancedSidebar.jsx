@@ -198,6 +198,12 @@ const EnhancedSidebar = ({ searchTerm = "" }) => {
               type="text"
               placeholder="Search conversations..."
               className="input input-bordered w-full pl-10 input-sm"
+              onChange={(e) => {
+                // Trigger search in parent component
+                if (window.updateSearchTerm) {
+                  window.updateSearchTerm(e.target.value);
+                }
+              }}
             />
           </div>
         )}
@@ -321,12 +327,6 @@ const EnhancedSidebar = ({ searchTerm = "" }) => {
                     {/* Hover Actions */}
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-end gap-1 mt-2">
                       <button className="btn btn-ghost btn-xs btn-circle">
-                        <Phone className="h-3 w-3" />
-                      </button>
-                      <button className="btn btn-ghost btn-xs btn-circle">
-                        <Video className="h-3 w-3" />
-                      </button>
-                      <button className="btn btn-ghost btn-xs btn-circle">
                         <MoreVertical className="h-3 w-3" />
                       </button>
                     </div>
@@ -340,12 +340,8 @@ const EnhancedSidebar = ({ searchTerm = "" }) => {
 
       {/* Footer */}
       <div className="p-4 border-t border-base-300">
-        <div className="flex items-center justify-between text-xs text-base-content/60">
+        <div className="flex items-center justify-center text-xs text-base-content/60">
           <span>{filteredUsers.length} conversations</span>
-          <button className="btn btn-ghost btn-xs gap-1">
-            <Settings className="h-3 w-3" />
-            Settings
-          </button>
         </div>
       </div>
     </div>

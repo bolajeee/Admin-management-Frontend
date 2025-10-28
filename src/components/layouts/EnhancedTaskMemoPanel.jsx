@@ -174,7 +174,16 @@ const EnhancedTaskMemoPanel = ({ activeTab, setActiveTab, isMobile = false }) =>
             </button>
           </div>
           
-          <button className="btn btn-primary btn-xs gap-1">
+          <button 
+            className="btn btn-primary btn-xs gap-1"
+            onClick={() => {
+              if (activeTab === 'tasks') {
+                window.location.href = '/admin/tasks';
+              } else {
+                window.location.href = '/admin/memos';
+              }
+            }}
+          >
             <Plus className="h-3 w-3" />
             New
           </button>
@@ -252,7 +261,18 @@ const EnhancedTaskMemoPanel = ({ activeTab, setActiveTab, isMobile = false }) =>
           <span>
             {activeTab === "tasks" ? filteredTasks.length : filteredMemos.length} {activeTab}
           </span>
-          <button className="btn btn-ghost btn-xs">View All</button>
+          <button 
+            className="btn btn-ghost btn-xs"
+            onClick={() => {
+              if (activeTab === 'tasks') {
+                window.location.href = '/admin/tasks';
+              } else {
+                window.location.href = '/admin/memos';
+              }
+            }}
+          >
+            View All
+          </button>
         </div>
       </div>
     </div>

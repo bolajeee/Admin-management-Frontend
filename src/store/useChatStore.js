@@ -21,7 +21,6 @@ export const useChatStore = create((set, get) => ({
             set({ users });
         } catch (error) {
             console.error("Error fetching users", error);
-            toast.error("Error fetching users");
             set({ users: [] });
         } finally {
             set({ isUsersLoading: false });
@@ -36,7 +35,6 @@ export const useChatStore = create((set, get) => ({
             set({ conversations });
         } catch (error) {
             console.error("Error fetching conversations", error);
-            toast.error("Error fetching conversations");
             set({ conversations: [] });
         } finally {
             set({ isConversationsLoading: false });
@@ -50,7 +48,6 @@ export const useChatStore = create((set, get) => ({
             set({ messages: response.data.data?.messages || [] })
         } catch (error) {
             console.error("Error fetching messages", error)
-            toast.error("Error fetching messages")
         } finally {
             set({ isMessagesLoading: false })
         }

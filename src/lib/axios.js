@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Create axios instance with default config
-const baseURL = 'https://admin-management-backend.onrender.com/api';
+const baseURL = 'http://localhost:5000/api';
 
 const axiosInstance = axios.create({
   baseURL: baseURL,

@@ -63,8 +63,10 @@ const EnhancedTasksPage = () => {
     priority: 'medium',
     category: '',
     dueDate: '',
-    status: 'pending',
-    tags: []
+    status: 'todo',
+    tags: [],
+    attachments: [],
+    comments: []
   });
 
   const { authUser } = useAuthStore();
@@ -72,10 +74,11 @@ const EnhancedTasksPage = () => {
 
   // Kanban columns
   const kanbanColumns = {
-    pending: { title: 'To Do', color: 'bg-gray-100' },
+    todo: { title: 'To Do', color: 'bg-gray-100' },
     'in-progress': { title: 'In Progress', color: 'bg-blue-100' },
-    review: { title: 'Review', color: 'bg-yellow-100' },
-    completed: { title: 'Completed', color: 'bg-green-100' }
+    blocked: { title: 'Blocked', color: 'bg-red-100' },
+    completed: { title: 'Completed', color: 'bg-green-100' },
+    cancelled: { title: 'Cancelled', color: 'bg-gray-200' }
   };
 
   useEffect(() => {
@@ -234,8 +237,10 @@ const EnhancedTasksPage = () => {
       priority: 'medium',
       category: '',
       dueDate: '',
-      status: 'pending',
-      tags: []
+      status: 'todo',
+      tags: [],
+      attachments: [],
+      comments: []
     });
   };
 
@@ -833,11 +838,47 @@ const EnhancedTasksPage = () => {
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
             >
-              <option value="pending">Pending</option>
+              <option value="todo">To Do</option>
               <option value="in-progress">In Progress</option>
-              <option value="review">Review</option>
               <option value="completed">Completed</option>
+              <option value="blocked">Blocked</option>
+              <option value="cancelled">Cancelled</option>
             </select>
+          </div>
+
+          <div>
+            <label className="label">
+              <span className="label-text">Tags (comma separated)</span>
+            </label>
+            <input
+              type="text"
+              className="input input-bordered w-full"
+              placeholder="e.g., urgent, frontend, bug-fix"
+              value={formData.tags.join(', ')}
+              onChange={(e) => setFormData({ 
+                ...formData, 
+                tags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag) 
+              })}
+            />
+          </div>
+
+          <div>
+            <label className="label">
+              <span className="label-text">Attachments</span>
+            </label>
+            <input
+              type="file"
+              className="file-input file-input-bordered w-full"
+              multiple
+              accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+              onChange={(e) => {
+                const files = Array.from(e.target.files);
+                setFormData({ ...formData, attachments: files });
+              }}
+            />
+            <div className="label">
+              <span className="label-text-alt">Supported: PDF, DOC, DOCX, TXT, JPG, PNG</span>
+            </div>
           </div>
         </div>
       </FormModal>
@@ -948,10 +989,11 @@ const EnhancedTasksPage = () => {
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
             >
-              <option value="pending">Pending</option>
+              <option value="todo">To Do</option>
               <option value="in-progress">In Progress</option>
-              <option value="review">Review</option>
               <option value="completed">Completed</option>
+              <option value="blocked">Blocked</option>
+              <option value="cancelled">Cancelled</option>
             </select>
           </div>
         </div>

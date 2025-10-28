@@ -18,11 +18,8 @@ export const useMemoStore = create((set, get) => ({
       const response = await axiosInstance.get("/memos/all");
       const memos = (response.data.data || []).filter(memo => memo.status !== 'deleted');
       set({ memos });
-      toast.success("Company memos fetched successfully");
     } catch (error) {
       console.error("Error fetching company memos", error);
-      const errorMessage = error.response?.data?.message || "Error fetching company memos";
-      toast.error(errorMessage);
       set({ memos: [] });
     } finally {
       set({ isMemosLoading: false });
@@ -39,11 +36,8 @@ export const useMemoStore = create((set, get) => ({
       const response = await axiosInstance.get(`/memos/user/${userId}`);
       const userMemos = (response.data.data || []).filter(memo => memo.status !== 'deleted');
       set({ userMemos });
-      toast.success("User memos fetched successfully");
     } catch (error) {
       console.error("Error fetching user memos", error);
-      const errorMessage = error.response?.data?.message || "Error fetching user memos";
-      toast.error(errorMessage);
       set({ userMemos: [] });
     } finally {
       set({ isUserMemosLoading: false });
@@ -57,7 +51,7 @@ export const useMemoStore = create((set, get) => ({
   sendCompanyWideMemo: async (memoData) => {
     set({ isMemosLoading: true });
     if (!memoData.content) {
-      toast.error("Title and content are required to send a memo");
+      console.error("Title and content are required to send a memo");
       set({ isMemosLoading: false });
       return false; // Return false to indicate failure
     }
@@ -65,18 +59,13 @@ export const useMemoStore = create((set, get) => ({
     try {
       const response = await axiosInstance.post("/memos/broadcast", memoData);
       if (response.status === 201) {
-        toast.success("Company wide memo sent successfully");
         set((state) => ({
           memos: [response.data.data, ...state.memos]
         }));
-      } else {
-        toast.error("Failed to send company wide memo");
       }
       set({ isMemosLoading: false });
     } catch (error) {
       console.error("Error sending company wide memo", error);
-      const errorMessage = error.response?.data?.message || "Error sending company wide memo";
-      toast.error(errorMessage);
       set({ isMemosLoading: false });
     }
   },
@@ -103,7 +92,6 @@ export const useMemoStore = create((set, get) => ({
     setMemoActionLoading(memoId, true);
     try {
       await axiosInstance.delete(`/memos/${memoId}`);
-      toast.success('Memo deleted for you!');
       if (userId) await getUserMemos(userId);
     } catch (e) {
       const errorMessage = e.response?.data?.message || 'Failed to delete memo.';
@@ -121,12 +109,10 @@ export const useMemoStore = create((set, get) => ({
     setMemoActionLoading(memoId, true);
     try {
       await axiosInstance.delete(`/memos/${memoId}?global=true`);
-      toast.success('Memo deleted globally!');
       await getMemos();
       if (userId) await getUserMemos(userId);
     } catch (e) {
-      const errorMessage = e.response?.data?.message || 'Failed to delete memo globally.';
-      toast.error(errorMessage);
+      console.error('Failed to delete memo globally:', e);
     } finally {
       setMemoActionLoading(memoId, false);
     }
@@ -135,10 +121,8 @@ export const useMemoStore = create((set, get) => ({
   markMemoAsReadApi: async (memoId, userId) => {
     try {
       await axiosInstance.patch(`/memos/${memoId}/read`);
-      toast.success('Memo marked as read!');
     } catch (e) {
-      const errorMessage = e.response?.data?.message || 'Failed to mark as read.';
-      toast.error(errorMessage);
+      console.error('Failed to mark as read:', e);
     }
   },
 

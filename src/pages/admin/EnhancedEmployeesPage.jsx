@@ -65,11 +65,15 @@ const EnhancedEmployeesPage = () => {
     {
       key: 'role',
       label: 'Role',
-      render: (role) => (
-        <span className={`badge ${role === 'admin' ? 'badge-primary' : 'badge-secondary'}`}>
-          {role}
-        </span>
-      )
+      render: (role, user) => {
+        const roleText = typeof role === 'object' ? role.name : role;
+        const displayRole = roleText || (user.isAdmin ? 'admin' : 'employee');
+        return (
+          <span className={`badge ${displayRole === 'admin' ? 'badge-primary' : 'badge-secondary'}`}>
+            {displayRole.charAt(0).toUpperCase() + displayRole.slice(1)}
+          </span>
+        );
+      }
     },
     {
       key: 'department',

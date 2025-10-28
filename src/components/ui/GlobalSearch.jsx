@@ -166,10 +166,7 @@ const GlobalSearch = ({ isOpen, onClose }) => {
                   onChange={(e) => setQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-transparent border-none outline-none text-base-content placeholder-base-content/50 text-lg"
                 />
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-                  <kbd className="kbd kbd-sm">⌘</kbd>
-                  <kbd className="kbd kbd-sm">K</kbd>
-                </div>
+
               </div>
             </div>
 
@@ -234,20 +231,8 @@ const GlobalSearch = ({ isOpen, onClose }) => {
                 <div className="p-8 text-center">
                   <Command className="h-12 w-12 text-base-content/30 mx-auto mb-3" />
                   <p className="text-base-content/60">Start typing to search</p>
-                  <div className="flex items-center justify-center gap-4 mt-4 text-sm text-base-content/40">
-                    <div className="flex items-center gap-1">
-                      <kbd className="kbd kbd-sm">↑</kbd>
-                      <kbd className="kbd kbd-sm">↓</kbd>
-                      <span>Navigate</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <kbd className="kbd kbd-sm">↵</kbd>
-                      <span>Select</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <kbd className="kbd kbd-sm">Esc</kbd>
-                      <span>Close</span>
-                    </div>
+                  <div className="text-sm text-base-content/40 mt-4">
+                    Use arrow keys to navigate, Enter to select, Esc to close
                   </div>
                 </div>
               )}
