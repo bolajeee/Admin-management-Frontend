@@ -250,12 +250,14 @@ const EnhancedReportsPage = () => {
       const inactiveUsers = totalUsers - activeUsers;
       
       // Count admins vs employees based on role or isAdmin field
-      const adminUsers = users.filter(user => 
-        user.isAdmin === true || 
-        user.role === 'admin' || 
-        user.role?.name === 'admin' ||
-        (typeof user.role === 'string' && user.role.toLowerCase() === 'admin')
-      ).length;
+      const adminUsers = users.filter(user => {
+        // Check various ways the admin role might be stored
+        if (user.isAdmin === true) return true;
+        if (user.role?.name === 'admin') return true;
+        if (typeof user.role === 'string' && user.role.toLowerCase() === 'admin') return true;
+        if (user.role === 'admin') return true;
+        return false;
+      }).length;
       
       const regularUsers = totalUsers - adminUsers;
 
