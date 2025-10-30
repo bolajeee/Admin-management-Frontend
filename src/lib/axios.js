@@ -7,14 +7,13 @@ const axiosInstance = axios.create({
   baseURL: baseURL,
 });
 
-// Add request interceptor to handle errors
+// Add request interceptor to handle authentication
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('API Request:', config.method?.toUpperCase(), config.url);
     return config;
   },
   (error) => {
@@ -22,14 +21,16 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Add response interceptor for debugging
+// Add response interceptor for error handling
 axiosInstance.interceptors.response.use(
   (response) => {
-    console.log('API Response:', response.config.url, response.status, response.data);
     return response;
   },
   (error) => {
-    console.error('API Error:', error.config?.url, error.response?.status, error.response?.data);
+    // Only log errors in development
+    if (import.meta.env.DEV) {
+      console.error('API Error:', error.config?.url, error.response?.status, error.response?.data);
+    }
     return Promise.reject(error);
   }
 );

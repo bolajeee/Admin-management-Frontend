@@ -19,7 +19,6 @@ export const useMemoStore = create((set, get) => ({
       const memos = (response.data.data || []).filter(memo => memo.status !== 'deleted');
       set({ memos });
     } catch (error) {
-      console.error("Error fetching company memos", error);
       set({ memos: [] });
     } finally {
       set({ isMemosLoading: false });
@@ -37,7 +36,6 @@ export const useMemoStore = create((set, get) => ({
       const userMemos = (response.data.data || []).filter(memo => memo.status !== 'deleted');
       set({ userMemos });
     } catch (error) {
-      console.error("Error fetching user memos", error);
       set({ userMemos: [] });
     } finally {
       set({ isUserMemosLoading: false });
@@ -65,7 +63,7 @@ export const useMemoStore = create((set, get) => ({
       }
       set({ isMemosLoading: false });
     } catch (error) {
-      console.error("Error sending company wide memo", error);
+      toast.error("Failed to send memo");
       set({ isMemosLoading: false });
     }
   },
@@ -112,7 +110,7 @@ export const useMemoStore = create((set, get) => ({
       await getMemos();
       if (userId) await getUserMemos(userId);
     } catch (e) {
-      console.error('Failed to delete memo globally:', e);
+      toast.error('Failed to delete memo globally');
     } finally {
       setMemoActionLoading(memoId, false);
     }
@@ -120,9 +118,50 @@ export const useMemoStore = create((set, get) => ({
 
   markMemoAsReadApi: async (memoId, userId) => {
     try {
-      await axiosInstance.patch(`/memos/${memoId}/read`);
+      console.log('Store: Marking memo as read:', memoId);
+      const response = await axiosInstance.patch(`/memos/${memoId}/read`);
+      console.log('Store: Mark as read response:', response.data);
+      toast.success('Memo marked as read');
     } catch (e) {
-      console.error('Failed to mark as read:', e);
+      console.error('Store: Mark as read error:', e.response?.data || e.message);
+      toast.error(e.response?.data?.error?.message || 'Failed to mark memo as read');
+      throw e;
+    }
+  },
+
+  /**
+   * Acknowledge memo
+   */
+  acknowledgeMemo: async (memoId, userId, comments = '') => {
+    const { setMemoActionLoading, getUserMemos } = get();
+    setMemoActionLoading(memoId, true);
+    try {
+      await axiosInstance.patch(`/memos/${memoId}/acknowledge`, { comments });
+      if (userId) await getUserMemos(userId);
+      toast.success('Memo acknowledged');
+    } catch (e) {
+      const errorMessage = e.response?.data?.message || 'Failed to acknowledge memo';
+      toast.error(errorMessage);
+    } finally {
+      setMemoActionLoading(memoId, false);
+    }
+  },
+
+  /**
+   * Snooze memo
+   */
+  snoozeMemo: async (memoId, userId, durationMinutes = 15, comments = '') => {
+    const { setMemoActionLoading, getUserMemos } = get();
+    setMemoActionLoading(memoId, true);
+    try {
+      await axiosInstance.patch(`/memos/${memoId}/snooze`, { durationMinutes, comments });
+      if (userId) await getUserMemos(userId);
+      toast.success(`Memo snoozed for ${durationMinutes} minutes`);
+    } catch (e) {
+      const errorMessage = e.response?.data?.message || 'Failed to snooze memo';
+      toast.error(errorMessage);
+    } finally {
+      setMemoActionLoading(memoId, false);
     }
   },
 

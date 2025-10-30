@@ -11,7 +11,7 @@ function formatDate(date) {
 }
 
 export default function UserMemosPanel() {
-  const { getUserMemos, userMemos, isUserMemosLoading, markMemoAsRead, deleteMemo, memoActionLoading } = useMemoStore();
+  const { getUserMemos, userMemos, isUserMemosLoading, markMemoAsRead, deleteMemo, acknowledgeMemo, snoozeMemo, memoActionLoading } = useMemoStore();
   const { authUser } = useAuthStore();
   const userId = authUser?._id;
 
@@ -114,15 +114,31 @@ export default function UserMemosPanel() {
                     </span>
                   )}
                   {isAcknowledged && statusProps.label !== 'Snoozed' ? (
-                    <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">Read</span>
+                    <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">Acknowledged</span>
                   ) : !isDeleted && (
-                    <button
-                      className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition disabled:opacity-50"
-                      onClick={() => markMemoAsRead(memo.id, userId)}
-                      disabled={memoActionLoading[memo.id]}
-                    >
-                      {memoActionLoading[memo.id] ? '...' : 'Mark as Read'}
-                    </button>
+                    <div className="ml-2 flex gap-1">
+                      <button
+                        className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition disabled:opacity-50"
+                        onClick={() => markMemoAsRead(memo.id, userId)}
+                        disabled={memoActionLoading[memo.id]}
+                      >
+                        {memoActionLoading[memo.id] ? '...' : 'Read'}
+                      </button>
+                      <button
+                        className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 transition disabled:opacity-50"
+                        onClick={() => acknowledgeMemo(memo.id, userId, 'Acknowledged from user panel')}
+                        disabled={memoActionLoading[memo.id]}
+                      >
+                        {memoActionLoading[memo.id] ? '...' : 'Acknowledge'}
+                      </button>
+                      <button
+                        className="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200 hover:bg-yellow-200 transition disabled:opacity-50"
+                        onClick={() => snoozeMemo(memo.id, userId, 15, 'Snoozed from user panel')}
+                        disabled={memoActionLoading[memo.id]}
+                      >
+                        {memoActionLoading[memo.id] ? '...' : 'Snooze'}
+                      </button>
+                    </div>
                   )}
                   {!isDeleted && (
                     <button

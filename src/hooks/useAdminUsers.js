@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { axiosInstance } from '../lib/axios';
+import toast from 'react-hot-toast';
 
 export function useAdminUsers() {
   const [users, setUsers] = useState([]);
@@ -16,16 +17,13 @@ export function useAdminUsers() {
         const res = await axiosInstance.get('/admin/users?populate=role');
         users = res.data.data?.users || res.data.users || res.data.data || res.data || [];
       } catch (adminErr) {
-        console.log('Admin users endpoint failed, trying messages/users:', adminErr.response?.data);
         // Fallback to messages/users endpoint
         const res = await axiosInstance.get('/messages/users');
         users = res.data.data || res.data.users || res.data || [];
       }
 
-      console.log('Fetched users:', users.slice(0, 2)); // Log first 2 users for debugging
       setUsers(users);
     } catch (err) {
-      console.error('Error fetching users:', err);
       setError('Failed to fetch users');
     } finally {
       setIsLoading(false);
@@ -46,20 +44,19 @@ export function useAdminUsers() {
         // First try auth/signup endpoint (admin only)
         response = await axiosInstance.post('/auth/signup', userData);
       } catch (signupErr) {
-        console.log('Auth signup failed, trying auth/create:', signupErr.response?.data);
         // Fallback to auth create endpoint
         response = await axiosInstance.post('/auth/create', userData);
       }
 
-      console.log('User created successfully:', response.data);
-
       // Refresh users list
       await fetchUsers();
+      toast.success('User created successfully');
 
       return response.data;
     } catch (err) {
-      console.error('Error creating user:', err);
-      throw new Error(err.response?.data?.message || 'Failed to create user');
+      const errorMessage = err.response?.data?.message || 'Failed to create user';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -70,15 +67,16 @@ export function useAdminUsers() {
       setIsLoading(true);
 
       const response = await axiosInstance.put(`/admin/users/${userId}`, userData);
-      console.log('User updated successfully:', response.data);
 
       // Refresh users list
       await fetchUsers();
+      toast.success('User updated successfully');
 
       return response.data;
     } catch (err) {
-      console.error('Error updating user:', err);
-      throw new Error(err.response?.data?.message || 'Failed to update user');
+      const errorMessage = err.response?.data?.message || 'Failed to update user';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -89,15 +87,16 @@ export function useAdminUsers() {
       setIsLoading(true);
 
       const response = await axiosInstance.delete(`/admin/users/${userId}`);
-      console.log('User deleted successfully:', response.data);
 
       // Refresh users list
       await fetchUsers();
+      toast.success('User deleted successfully');
 
       return response.data;
     } catch (err) {
-      console.error('Error deleting user:', err);
-      throw new Error(err.response?.data?.message || 'Failed to delete user');
+      const errorMessage = err.response?.data?.message || 'Failed to delete user';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -111,15 +110,16 @@ export function useAdminUsers() {
         status: newStatus,
         isActive: newStatus === 'active'
       });
-      console.log('User status updated successfully:', response.data);
 
       // Refresh users list
       await fetchUsers();
+      toast.success('User status updated successfully');
 
       return response.data;
     } catch (err) {
-      console.error('Error updating user status:', err);
-      throw new Error(err.response?.data?.message || 'Failed to update user status');
+      const errorMessage = err.response?.data?.message || 'Failed to update user status';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }

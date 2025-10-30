@@ -86,20 +86,15 @@ const EnhancedReportsPage = () => {
     setLoading(true);
     try {
       const response = await axiosInstance.get('/reports/uploaded-reports');
-      
+
       // Handle different response structures
       const reportsData = response.data.data || response.data.reports || response.data || [];
-      
-      console.log('Reports API response:', {
-        raw: response.data,
-        processed: reportsData,
-        count: reportsData.length
-      });
-      
+
+
+
       setReports(reportsData);
     } catch (error) {
       toast.error('Failed to fetch reports');
-      console.error('Error fetching reports:', error);
       setReports([]);
     } finally {
       setLoading(false);
@@ -114,52 +109,24 @@ const EnhancedReportsPage = () => {
         memoAnalytics,
         userStats
       ] = await Promise.all([
-        axiosInstance.get('/dashboard/stats').catch(err => {
-          console.log('Dashboard stats API error:', err.response?.data);
+        axiosInstance.get('/dashboard/stats').catch(() => {
           return { data: { employees: 0, tasks: 0, memos: 0, messagesToday: 0 } };
         }),
-        axiosInstance.get('/tasks/analytics/completed').catch(err => {
-          console.log('Task analytics API error:', err.response?.data);
+        axiosInstance.get('/tasks/analytics/completed').catch(() => {
           return { data: { data: [] } };
         }),
-        axiosInstance.get('/memos/analytics/read').catch(err => {
-          console.log('Memo analytics API error:', err.response?.data);
+        axiosInstance.get('/memos/analytics/read').catch(() => {
           return { data: { data: [] } };
         }),
-        axiosInstance.get('/messages/employees/count').catch(err => {
-          console.log('User stats API error:', err.response?.data);
+        axiosInstance.get('/messages/employees/count').catch(() => {
           return { data: { count: 0 } };
         })
       ]);
 
-      // Handle different response structures
-      // For dashboard stats, the data is in response.data.data based on API response structure
-      // dashboardStats.data is the full response: { success, message, data, timestamp }
-      // We need dashboardStats.data.data to get the actual metrics
+      // Extract data from API responses
       const dashboardData = dashboardStats.data?.data || {};
       const taskData = taskAnalytics.data.data || taskAnalytics.data.analytics || taskAnalytics.data || [];
       const memoData = memoAnalytics.data.data || memoAnalytics.data.analytics || memoAnalytics.data || [];
-
-      console.log('Reports Analytics API responses:', {
-        dashboard: { 
-          fullResponse: dashboardStats.data,
-          extractedData: dashboardData,
-          hasNestedData: !!dashboardStats.data?.data,
-          dataKeys: Object.keys(dashboardData)
-        },
-        tasks: { raw: taskAnalytics.data, processed: taskData },
-        memos: { raw: memoAnalytics.data, processed: memoData },
-        users: { raw: userStats.data }
-      });
-
-      console.log('Dashboard data for performance metrics:', {
-        extracted: dashboardData,
-        employees: dashboardData.employees,
-        tasks: dashboardData.tasks,
-        memos: dashboardData.memos,
-        messagesToday: dashboardData.messagesToday,
-        isCorrectStructure: typeof dashboardData.employees === 'number'
-      });
 
       // Generate fallback data if APIs don't return data
       const fallbackTaskData = taskData.length === 0 ? [
@@ -182,16 +149,9 @@ const EnhancedReportsPage = () => {
         { date: '2024-10-07', count: 6 }
       ] : memoData;
 
-      if (taskData.length === 0) {
-        console.log('No task analytics data, using fallback data');
-      }
-      if (memoData.length === 0) {
-        console.log('No memo analytics data, using fallback data');
-      }
-
       // Generate user stats from actual user data
       const processedUserStats = await generateUserStats();
-      
+
       setAnalytics({
         userStats: Array.isArray(processedUserStats) ? processedUserStats : [],
         taskStats: fallbackTaskData,
@@ -200,32 +160,37 @@ const EnhancedReportsPage = () => {
         performanceMetrics: dashboardData
       });
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      toast.error('Failed to load analytics data');
+
       // Set fallback analytics data
-      const fallbackUserStats = await generateUserStats();
-      setAnalytics({
-        userStats: Array.isArray(fallbackUserStats) ? fallbackUserStats : [],
-        taskStats: [
-          { date: '2024-10-01', count: 5 },
-          { date: '2024-10-02', count: 8 },
-          { date: '2024-10-03', count: 12 },
-          { date: '2024-10-04', count: 6 },
-          { date: '2024-10-05', count: 15 },
-          { date: '2024-10-06', count: 9 },
-          { date: '2024-10-07', count: 11 }
-        ],
-        memoStats: [
-          { date: '2024-10-01', count: 3 },
-          { date: '2024-10-02', count: 7 },
-          { date: '2024-10-03', count: 5 },
-          { date: '2024-10-04', count: 9 },
-          { date: '2024-10-05', count: 12 },
-          { date: '2024-10-06', count: 8 },
-          { date: '2024-10-07', count: 6 }
-        ],
-        messageStats: generateMessageStats(),
-        performanceMetrics: { employees: 25, tasks: 45, memos: 18, messagesToday: 12 }
-      });
+      try {
+        const fallbackUserStats = await generateUserStats();
+        setAnalytics({
+          userStats: Array.isArray(fallbackUserStats) ? fallbackUserStats : [],
+          taskStats: [
+            { date: '2024-10-01', count: 5 },
+            { date: '2024-10-02', count: 8 },
+            { date: '2024-10-03', count: 12 },
+            { date: '2024-10-04', count: 6 },
+            { date: '2024-10-05', count: 15 },
+            { date: '2024-10-06', count: 9 },
+            { date: '2024-10-07', count: 11 }
+          ],
+          memoStats: [
+            { date: '2024-10-01', count: 3 },
+            { date: '2024-10-02', count: 7 },
+            { date: '2024-10-03', count: 5 },
+            { date: '2024-10-04', count: 9 },
+            { date: '2024-10-05', count: 12 },
+            { date: '2024-10-06', count: 8 },
+            { date: '2024-10-07', count: 6 }
+          ],
+          messageStats: generateMessageStats(),
+          performanceMetrics: { employees: 25, tasks: 45, memos: 18, messagesToday: 12 }
+        });
+      } catch (fallbackError) {
+        toast.error('Failed to load fallback analytics data');
+      }
     }
   };
 
@@ -237,18 +202,15 @@ const EnhancedReportsPage = () => {
         const response = await axiosInstance.get('/admin/users?populate=role');
         users = response.data.data?.users || response.data.users || response.data.data || response.data || [];
       } catch (adminErr) {
-        console.log('Admin users endpoint failed, trying messages/users:', adminErr.response?.data);
         const response = await axiosInstance.get('/messages/users');
         users = response.data.data || response.data.users || response.data || [];
       }
-
-      console.log('Fetched users for analytics:', users.length, users.slice(0, 2));
 
       // Calculate real statistics from actual user data
       const totalUsers = users.length;
       const activeUsers = users.filter(user => user.isActive !== false && user.status !== 'inactive').length;
       const inactiveUsers = totalUsers - activeUsers;
-      
+
       // Count admins vs employees based on role or isAdmin field
       const adminUsers = users.filter(user => {
         // Check various ways the admin role might be stored
@@ -258,16 +220,8 @@ const EnhancedReportsPage = () => {
         if (user.role === 'admin') return true;
         return false;
       }).length;
-      
-      const regularUsers = totalUsers - adminUsers;
 
-      console.log('User analytics calculated:', {
-        total: totalUsers,
-        active: activeUsers,
-        inactive: inactiveUsers,
-        admin: adminUsers,
-        regular: regularUsers
-      });
+      const regularUsers = totalUsers - adminUsers;
 
       return [
         { name: 'Active Users', value: activeUsers, color: '#10b981' },
@@ -276,15 +230,12 @@ const EnhancedReportsPage = () => {
         { name: 'Regular Users', value: regularUsers, color: '#8b5cf6' }
       ];
     } catch (error) {
-      console.error('Error fetching user data for analytics:', error);
-      
       // Fallback to basic stats if user fetch fails
-      const totalEmployees = 6; // You mentioned 6 users
       return [
         { name: 'Active Users', value: 6, color: '#10b981' },
         { name: 'Inactive Users', value: 0, color: '#ef4444' },
-        { name: 'Admin Users', value: 5, color: '#3b82f6' }, // You mentioned 5 admins
-        { name: 'Regular Users', value: 1, color: '#8b5cf6' }  // You mentioned 1 employee
+        { name: 'Admin Users', value: 4, color: '#3b82f6' },
+        { name: 'Regular Users', value: 2, color: '#8b5cf6' }
       ];
     }
   };
@@ -311,13 +262,12 @@ const EnhancedReportsPage = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
-      
+
       setShowUploadModal(false);
       fetchReports();
       toast.success('Report uploaded successfully');
     } catch (error) {
       toast.error('Failed to upload report');
-      console.error('Error uploading report:', error);
     } finally {
       setUploading(false);
     }
@@ -332,7 +282,6 @@ const EnhancedReportsPage = () => {
       toast.success('Report deleted successfully');
     } catch (error) {
       toast.error('Failed to delete report');
-      console.error('Error deleting report:', error);
     }
   };
 
@@ -341,7 +290,7 @@ const EnhancedReportsPage = () => {
       const response = await axiosInstance.get(`/reports/export?format=${format}`, {
         responseType: 'blob'
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -349,11 +298,10 @@ const EnhancedReportsPage = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
+
       toast.success('Report exported successfully');
     } catch (error) {
       toast.error('Failed to export report');
-      console.error('Error exporting report:', error);
     }
   };
 
@@ -364,10 +312,8 @@ const EnhancedReportsPage = () => {
       setReportData(data);
       setSelectedReport(reports.find(r => r._id === reportId));
       setShowViewModal(true); // Show the view modal
-      console.log('Report data loaded:', { reportId, data, report: reports.find(r => r._id === reportId) });
     } catch (error) {
       toast.error('Failed to load report data');
-      console.error('Error loading report data:', error);
     }
   };
 
@@ -380,7 +326,7 @@ const EnhancedReportsPage = () => {
     const fileName = (report.filename || report.name || '').toLowerCase();
     const uploaderName = (report.uploadedBy?.name || report.uploader?.name || '').toLowerCase();
     const searchLower = searchTerm.toLowerCase();
-    
+
     return fileName.includes(searchLower) || uploaderName.includes(searchLower);
   });
 
@@ -414,13 +360,13 @@ const EnhancedReportsPage = () => {
         if (!date) {
           return <div className="text-sm text-base-content/60">Unknown Date</div>;
         }
-        
+
         try {
           const dateObj = new Date(date);
           if (isNaN(dateObj.getTime())) {
             return <div className="text-sm text-base-content/60">Invalid Date</div>;
           }
-          
+
           return (
             <div className="text-sm">
               <div>{dateObj.toLocaleDateString()}</div>
@@ -449,11 +395,10 @@ const EnhancedReportsPage = () => {
       render: (status, report) => {
         const reportStatus = status || report.status || 'processed';
         return (
-          <span className={`badge badge-sm ${
-            reportStatus === 'processed' ? 'badge-success' : 
-            reportStatus === 'processing' ? 'badge-warning' : 
-            'badge-error'
-          }`}>
+          <span className={`badge badge-sm ${reportStatus === 'processed' ? 'badge-success' :
+            reportStatus === 'processing' ? 'badge-warning' :
+              'badge-error'
+            }`}>
             {reportStatus}
           </span>
         );
@@ -476,7 +421,7 @@ const EnhancedReportsPage = () => {
             Comprehensive insights and data analysis
           </p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
             <input
@@ -493,7 +438,7 @@ const EnhancedReportsPage = () => {
               className="input input-bordered input-sm"
             />
           </div>
-          
+
           <div className="dropdown dropdown-end">
             <button tabIndex={0} className="btn btn-ghost btn-sm gap-2">
               <Download className="h-4 w-4" />
@@ -505,7 +450,7 @@ const EnhancedReportsPage = () => {
               <li><button onClick={() => handleExportReport('pdf')}>PDF</button></li>
             </ul>
           </div>
-          
+
           <button
             onClick={fetchAnalytics}
             className="btn btn-ghost btn-sm gap-2"
@@ -514,7 +459,7 @@ const EnhancedReportsPage = () => {
             <RefreshCw className="h-4 w-4" />
             Refresh
           </button>
-          
+
           <button
             onClick={() => setShowUploadModal(true)}
             className="btn btn-primary btn-sm gap-2"
@@ -562,12 +507,12 @@ const EnhancedReportsPage = () => {
             <div className="space-y-6">
               {/* Key Metrics */}
               {/* Debug Performance Metrics */}
-              <div className="mb-4 p-4 bg-base-200 rounded-lg">
+              {/* <div className="mb-4 p-4 bg-base-200 rounded-lg">
                 <h4 className="font-semibold mb-2">Performance Metrics Debug:</h4>
                 <pre className="text-xs overflow-auto">
                   {JSON.stringify(analytics.performanceMetrics, null, 2)}
                 </pre>
-              </div>
+              </div> */}
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white">
@@ -652,19 +597,19 @@ const EnhancedReportsPage = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={analytics.taskStats}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="date" 
+                        <XAxis
+                          dataKey="date"
                           tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         />
                         <YAxis />
-                        <Tooltip 
+                        <Tooltip
                           labelFormatter={(value) => new Date(value).toLocaleDateString()}
                         />
-                        <Area 
-                          type="monotone" 
-                          dataKey="count" 
-                          stroke="hsl(var(--p))" 
-                          fill="hsl(var(--p))" 
+                        <Area
+                          type="monotone"
+                          dataKey="count"
+                          stroke="hsl(var(--p))"
+                          fill="hsl(var(--p))"
                           fillOpacity={0.3}
                         />
                       </AreaChart>
@@ -703,18 +648,18 @@ const EnhancedReportsPage = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsLineChart data={analytics.memoStats}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="date" 
+                        <XAxis
+                          dataKey="date"
                           tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         />
                         <YAxis />
-                        <Tooltip 
+                        <Tooltip
                           labelFormatter={(value) => new Date(value).toLocaleDateString()}
                         />
-                        <Line 
-                          type="monotone" 
-                          dataKey="count" 
-                          stroke="hsl(var(--a))" 
+                        <Line
+                          type="monotone"
+                          dataKey="count"
+                          stroke="hsl(var(--a))"
                           strokeWidth={3}
                           dot={{ r: 4 }}
                         />
@@ -749,7 +694,7 @@ const EnhancedReportsPage = () => {
               </div>
 
               {/* Debug Info */}
-              <div className="mb-4 p-4 bg-base-200 rounded-lg">
+              {/* <div className="mb-4 p-4 bg-base-200 rounded-lg">
                 <h4 className="font-semibold mb-2">Reports Debug Info:</h4>
                 <p>Total reports: {reports.length}</p>
                 <p>Filtered reports: {filteredReports.length}</p>
@@ -771,7 +716,7 @@ const EnhancedReportsPage = () => {
                     </pre>
                   </details>
                 )}
-              </div>
+              </div> */}
 
               {/* Reports Table */}
               <DataTable
@@ -799,7 +744,7 @@ const EnhancedReportsPage = () => {
                   <Users className="h-5 w-5 text-primary" />
                   User Analytics
                 </h2>
-                
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* User Distribution Pie Chart */}
                   <div className="bg-base-200 rounded-lg p-4">
@@ -855,7 +800,7 @@ const EnhancedReportsPage = () => {
                   <CheckSquare className="h-5 w-5 text-primary" />
                   Task Analytics
                 </h2>
-                
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Task Completion Trend */}
                   <div className="bg-base-200 rounded-lg p-4">
@@ -864,19 +809,19 @@ const EnhancedReportsPage = () => {
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={analytics.taskStats}>
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis 
-                            dataKey="date" 
+                          <XAxis
+                            dataKey="date"
                             tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           />
                           <YAxis />
-                          <Tooltip 
+                          <Tooltip
                             labelFormatter={(value) => new Date(value).toLocaleDateString()}
                           />
-                          <Area 
-                            type="monotone" 
-                            dataKey="count" 
-                            stroke="hsl(var(--p))" 
-                            fill="hsl(var(--p))" 
+                          <Area
+                            type="monotone"
+                            dataKey="count"
+                            stroke="hsl(var(--p))"
+                            fill="hsl(var(--p))"
                             fillOpacity={0.3}
                           />
                         </AreaChart>
@@ -897,7 +842,7 @@ const EnhancedReportsPage = () => {
                     <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg p-4 text-white">
                       <h4 className="text-sm font-medium">Completion Rate</h4>
                       <p className="text-2xl font-bold">
-                        {analytics.performanceMetrics.tasks > 0 
+                        {analytics.performanceMetrics.tasks > 0
                           ? Math.round((analytics.performanceMetrics.completedTasks / analytics.performanceMetrics.tasks) * 100)
                           : 0}%
                       </p>
@@ -916,7 +861,7 @@ const EnhancedReportsPage = () => {
                   <Bell className="h-5 w-5 text-primary" />
                   Memo Analytics
                 </h2>
-                
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Memo Read Rate */}
                   <div className="bg-base-200 rounded-lg p-4">
@@ -925,18 +870,18 @@ const EnhancedReportsPage = () => {
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsLineChart data={analytics.memoStats}>
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis 
-                            dataKey="date" 
+                          <XAxis
+                            dataKey="date"
                             tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           />
                           <YAxis />
-                          <Tooltip 
+                          <Tooltip
                             labelFormatter={(value) => new Date(value).toLocaleDateString()}
                           />
-                          <Line 
-                            type="monotone" 
-                            dataKey="count" 
-                            stroke="hsl(var(--a))" 
+                          <Line
+                            type="monotone"
+                            dataKey="count"
+                            stroke="hsl(var(--a))"
                             strokeWidth={3}
                             dot={{ r: 4 }}
                           />
@@ -954,7 +899,7 @@ const EnhancedReportsPage = () => {
                     <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
                       <h4 className="text-sm font-medium">Average Read Rate</h4>
                       <p className="text-2xl font-bold">
-                        {analytics.memoStats.length > 0 
+                        {analytics.memoStats.length > 0
                           ? Math.round(analytics.memoStats.reduce((sum, memo) => sum + memo.count, 0) / analytics.memoStats.length)
                           : 0}
                       </p>
@@ -979,7 +924,7 @@ const EnhancedReportsPage = () => {
                   <MessageSquare className="h-5 w-5 text-primary" />
                   Message Analytics
                 </h2>
-                
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Message Activity */}
                   <div className="bg-base-200 rounded-lg p-4">
@@ -1012,7 +957,7 @@ const EnhancedReportsPage = () => {
                     <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
                       <h4 className="text-sm font-medium">Daily Average</h4>
                       <p className="text-2xl font-bold">
-                        {analytics.messageStats.length > 0 
+                        {analytics.messageStats.length > 0
                           ? Math.round(analytics.messageStats.reduce((sum, msg) => sum + msg.messages, 0) / analytics.messageStats.length)
                           : 0}
                       </p>
@@ -1060,7 +1005,7 @@ const EnhancedReportsPage = () => {
               )}
             </button>
           </div>
-          
+
           <div className="text-sm text-base-content/60">
             <p>Supported formats: CSV, Excel (.xlsx, .xls)</p>
             <p>Maximum file size: 10MB</p>

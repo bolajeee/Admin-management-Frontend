@@ -41,12 +41,14 @@ const EnhancedMemosPage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showSnoozeModal, setShowSnoozeModal] = useState(false);
   const [selectedMemo, setSelectedMemo] = useState(null);
+  const [snoozeDuration, setSnoozeDuration] = useState(15);
   const [memoStats, setMemoStats] = useState({});
   const [analyticsData, setAnalyticsData] = useState([]);
   const [filter, setFilter] = useState('all'); // all, unread, high, medium, low
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -54,6 +56,7 @@ const EnhancedMemosPage = () => {
     recipients: [],
     broadcast: true,
     expiresAt: '',
+    deadline: '',
     attachments: []
   });
 
@@ -67,16 +70,22 @@ const EnhancedMemosPage = () => {
     getUsers();
   }, []);
 
+  // Debug users data
+  useEffect(() => {
+    console.log('Users data updated:', users.length, users.slice(0, 2));
+  }, [users]);
+
   const fetchMemos = async () => {
     setLoading(true);
     try {
       const response = await axiosInstance.get('/memos/all');
-      const memosData = response.data.memos || response.data.data || response.data || [];
-      console.log('Memos API response:', response.data);
-      console.log('Extracted memos:', memosData);
+      const memosData = response.data.data || response.data.memos || response.data || [];
+
+      console.log('Fetched memos data:', memosData.slice(0, 1)); // Log first memo to see structure
+
       setMemos(memosData);
     } catch (error) {
-      console.error('Error fetching memos:', error);
+      toast.error('Failed to fetch memos');
     } finally {
       setLoading(false);
     }
@@ -87,7 +96,7 @@ const EnhancedMemosPage = () => {
       const response = await axiosInstance.get('/memos/count');
       setMemoStats(response.data);
     } catch (error) {
-      console.error('Error fetching memo stats:', error);
+      // Silently fail for stats
     }
   };
 
@@ -96,30 +105,43 @@ const EnhancedMemosPage = () => {
       const response = await axiosInstance.get('/memos/analytics/read');
       setAnalyticsData(response.data.data || []);
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      // Silently fail for analytics
     }
   };
 
   const handleCreateMemo = async (e) => {
     e.preventDefault();
     try {
+      console.log('Frontend: Creating memo with formData:', formData);
+
       if (formData.broadcast) {
+        console.log('Frontend: Broadcasting memo to all users');
         await axiosInstance.post('/memos/broadcast', {
           title: formData.title,
           content: formData.content,
           severity: formData.severity,
-          expiresAt: formData.expiresAt || undefined
+          expiresAt: formData.expiresAt || undefined,
+          deadline: formData.deadline || undefined
         });
       } else {
+        console.log('Frontend: Creating memo for specific recipients:', formData.recipients);
+
+        // Validate recipients
+        if (!formData.recipients || formData.recipients.length === 0) {
+          toast.error('Please select at least one recipient');
+          return;
+        }
+
         await axiosInstance.post('/memos', {
           title: formData.title,
           content: formData.content,
           severity: formData.severity,
           recipients: formData.recipients,
-          expiresAt: formData.expiresAt || undefined
+          expiresAt: formData.expiresAt || undefined,
+          deadline: formData.deadline || undefined
         });
       }
-      
+
       setShowCreateModal(false);
       resetForm();
       fetchMemos();
@@ -127,34 +149,41 @@ const EnhancedMemosPage = () => {
       toast.success('Memo created successfully');
     } catch (error) {
       toast.error('Failed to create memo');
-      console.error('Error creating memo:', error);
     }
   };
 
   const handleEditMemo = async (e) => {
     e.preventDefault();
     try {
-      await axiosInstance.put(`/memos/${selectedMemo._id}`, {
+      const memoId = selectedMemo.id || selectedMemo._id;
+      const updateData = {
         title: formData.title,
         content: formData.content,
         severity: formData.severity,
-        expiresAt: formData.expiresAt || undefined
-      });
-      
+        expiresAt: formData.expiresAt || null,
+        deadline: formData.deadline || null
+      };
+
+      console.log('Frontend: Updating memo:', memoId, 'with data:', updateData);
+
+      const response = await axiosInstance.put(`/memos/${memoId}`, updateData);
+
+      console.log('Frontend: Update response:', response.data);
+
       setShowEditModal(false);
       setSelectedMemo(null);
       resetForm();
       fetchMemos();
       toast.success('Memo updated successfully');
     } catch (error) {
-      toast.error('Failed to update memo');
-      console.error('Error updating memo:', error);
+      console.error('Frontend: Update error:', error.response?.data || error.message);
+      toast.error(error.response?.data?.error?.message || 'Failed to update memo');
     }
   };
 
   const handleDeleteMemo = async () => {
     try {
-      await axiosInstance.delete(`/memos/${selectedMemo._id}`);
+      await axiosInstance.delete(`/memos/${selectedMemo.id || selectedMemo._id}`);
       setShowDeleteModal(false);
       setSelectedMemo(null);
       fetchMemos();
@@ -162,37 +191,59 @@ const EnhancedMemosPage = () => {
       toast.success('Memo deleted successfully');
     } catch (error) {
       toast.error('Failed to delete memo');
-      console.error('Error deleting memo:', error);
     }
   };
 
   const handleMarkAsRead = async (memoId) => {
     try {
-      await axiosInstance.patch(`/memos/${memoId}/read`);
+      console.log('Marking memo as read:', memoId);
+      const response = await axiosInstance.patch(`/memos/${memoId}/read`);
+      console.log('Mark as read response:', response.data);
       fetchMemos();
       toast.success('Memo marked as read');
     } catch (error) {
-      toast.error('Failed to mark memo as read');
+      console.error('Mark as read error:', error.response?.data || error.message);
+      toast.error(error.response?.data?.error?.message || 'Failed to mark memo as read');
     }
   };
 
   const handleAcknowledge = async (memoId) => {
     try {
-      await axiosInstance.patch(`/memos/${memoId}/acknowledge`);
+      console.log('Acknowledging memo:', memoId);
+      const response = await axiosInstance.patch(`/memos/${memoId}/acknowledge`, {
+        comments: 'Acknowledged from memo management'
+      });
+      console.log('Acknowledge response:', response.data);
       fetchMemos();
       toast.success('Memo acknowledged');
     } catch (error) {
-      toast.error('Failed to acknowledge memo');
+      console.error('Acknowledge error:', error.response?.data || error.message);
+      toast.error(error.response?.data?.error?.message || 'Failed to acknowledge memo');
     }
   };
 
-  const handleSnooze = async (memoId) => {
+  const openSnoozeModal = (memo) => {
+    setSelectedMemo(memo);
+    setSnoozeDuration(15); // Default to 15 minutes
+    setShowSnoozeModal(true);
+  };
+
+  const handleSnooze = async () => {
     try {
-      await axiosInstance.patch(`/memos/${memoId}/snooze`);
+      const memoId = selectedMemo.id || selectedMemo._id;
+      console.log('Snoozing memo:', memoId, 'for', snoozeDuration, 'minutes');
+      const response = await axiosInstance.patch(`/memos/${memoId}/snooze`, {
+        durationMinutes: snoozeDuration,
+        comments: `Snoozed for ${snoozeDuration} minutes from memo management`
+      });
+      console.log('Snooze response:', response.data);
+      setShowSnoozeModal(false);
+      setSelectedMemo(null);
       fetchMemos();
-      toast.success('Memo snoozed');
+      toast.success(`Memo snoozed for ${snoozeDuration} minutes`);
     } catch (error) {
-      toast.error('Failed to snooze memo');
+      console.error('Snooze error:', error.response?.data || error.message);
+      toast.error(error.response?.data?.error?.message || 'Failed to snooze memo');
     }
   };
 
@@ -204,6 +255,7 @@ const EnhancedMemosPage = () => {
       recipients: [],
       broadcast: true,
       expiresAt: '',
+      deadline: '',
       attachments: []
     });
   };
@@ -222,6 +274,7 @@ const EnhancedMemosPage = () => {
       recipients: memo.recipients || [],
       broadcast: memo.broadcast || false,
       expiresAt: memo.expiresAt ? new Date(memo.expiresAt).toISOString().split('T')[0] : '',
+      deadline: memo.deadline ? new Date(memo.deadline).toISOString().split('T')[0] : '',
       attachments: memo.attachments || []
     });
     setShowEditModal(true);
@@ -264,20 +317,18 @@ const EnhancedMemosPage = () => {
 
   const filteredMemos = memos.filter(memo => {
     if (!memo || !memo.title) {
-      console.warn('Invalid memo object:', memo);
       return false;
     }
-    
+
     const matchesSearch = memo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         memo.content?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      memo.content?.toLowerCase().includes(searchTerm.toLowerCase());
+
     if (filter === 'all') return matchesSearch;
     if (filter === 'unread') return matchesSearch && !memo.isRead;
     return matchesSearch && memo.severity === filter;
   });
 
-  // Debug filtered memos
-  console.log('Filtered memos:', filteredMemos.length, filteredMemos);
+
 
   const columns = [
     {
@@ -310,8 +361,8 @@ const EnhancedMemosPage = () => {
       label: 'Author',
       render: (_, memo) => (
         <div className="flex items-center gap-2">
-          <UserAvatar user={memo.author} size="w-6 h-6" />
-          <span className="text-sm">{memo.author?.name || memo.author?.email}</span>
+          <UserAvatar user={memo.createdBy} size="w-6 h-6" />
+          <span className="text-sm">{memo.createdBy?.name || memo.createdBy?.email}</span>
         </div>
       )
     },
@@ -320,15 +371,23 @@ const EnhancedMemosPage = () => {
       label: 'Recipients',
       render: (recipients, memo) => (
         <div className="flex items-center gap-1">
-          {memo.broadcast ? (
+          {memo.recipients && memo.recipients.length > 10 ? (
             <div className="flex items-center gap-1">
               <Users className="h-4 w-4 text-primary" />
-              <span className="text-sm">All Users</span>
+              <span className="text-sm">All Users ({memo.recipients.length})</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1">
-              <User className="h-4 w-4 text-info" />
-              <span className="text-sm">{recipients?.length || 0} users</span>
+            <div>
+              <div className="flex items-center gap-1">
+                <User className="h-4 w-4 text-info" />
+                <span className="text-sm">{memo.recipients?.length || 0} users</span>
+              </div>
+              {memo.recipients && memo.recipients.length > 0 && (
+                <div className="text-xs text-base-content/60 mt-1">
+                  {memo.recipients.slice(0, 2).map(r => r.name || r.email).join(', ')}
+                  {memo.recipients.length > 2 && ` +${memo.recipients.length - 2} more`}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -392,13 +451,13 @@ const EnhancedMemosPage = () => {
             Create and manage company announcements and notifications
           </p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button className="btn btn-ghost btn-sm gap-2">
             <Download className="h-4 w-4" />
             Export
           </button>
-          
+
           <button
             onClick={openCreateModal}
             className="btn btn-primary btn-sm gap-2"
@@ -495,15 +554,14 @@ const EnhancedMemosPage = () => {
             />
           </div>
         </div>
-        
+
         <div className="flex gap-2">
           {['all', 'unread', 'critical', 'high', 'medium', 'low'].map((filterOption) => (
             <button
               key={filterOption}
               onClick={() => setFilter(filterOption)}
-              className={`btn btn-sm ${
-                filter === filterOption ? 'btn-primary' : 'btn-ghost'
-              }`}
+              className={`btn btn-sm ${filter === filterOption ? 'btn-primary' : 'btn-ghost'
+                }`}
             >
               {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
             </button>
@@ -563,7 +621,7 @@ const EnhancedMemosPage = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="label">
                 <span className="label-text">Priority</span>
@@ -578,6 +636,18 @@ const EnhancedMemosPage = () => {
                 <option value="high">High</option>
                 <option value="critical">Critical</option>
               </select>
+            </div>
+
+            <div>
+              <label className="label">
+                <span className="label-text">Deadline</span>
+              </label>
+              <input
+                type="date"
+                className="input input-bordered w-full"
+                value={formData.deadline}
+                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+              />
             </div>
 
             <div>
@@ -608,35 +678,41 @@ const EnhancedMemosPage = () => {
           {!formData.broadcast && (
             <div>
               <label className="label">
-                <span className="label-text">Select Recipients</span>
+                <span className="label-text">
+                  Select Recipients ({formData.recipients.length} selected, {users.length} available)
+                </span>
               </label>
               <div className="max-h-40 overflow-y-auto border border-base-300 rounded p-2">
-                {users.map((user) => (
-                  <label key={user._id} className="label cursor-pointer">
-                    <div className="flex items-center gap-2">
-                      <UserAvatar user={user} size="w-6 h-6" />
-                      <span className="text-sm">{user.name || user.email}</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-sm"
-                      checked={formData.recipients.includes(user._id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setFormData({
-                            ...formData,
-                            recipients: [...formData.recipients, user._id]
-                          });
-                        } else {
-                          setFormData({
-                            ...formData,
-                            recipients: formData.recipients.filter(id => id !== user._id)
-                          });
-                        }
-                      }}
-                    />
-                  </label>
-                ))}
+                {users.length === 0 ? (
+                  <p className="text-sm text-base-content/60 p-2">No users available</p>
+                ) : (
+                  users.map((user) => (
+                    <label key={user._id} className="label cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <UserAvatar user={user} size="w-6 h-6" />
+                        <span className="text-sm">{user.name || user.email}</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="checkbox checkbox-sm"
+                        checked={formData.recipients.includes(user._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({
+                              ...formData,
+                              recipients: [...formData.recipients, user._id]
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              recipients: formData.recipients.filter(id => id !== user._id)
+                            });
+                          }
+                        }}
+                      />
+                    </label>
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -678,7 +754,7 @@ const EnhancedMemosPage = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="label">
                 <span className="label-text">Priority</span>
@@ -693,6 +769,18 @@ const EnhancedMemosPage = () => {
                 <option value="high">High</option>
                 <option value="critical">Critical</option>
               </select>
+            </div>
+
+            <div>
+              <label className="label">
+                <span className="label-text">Deadline</span>
+              </label>
+              <input
+                type="date"
+                className="input input-bordered w-full"
+                value={formData.deadline}
+                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+              />
             </div>
 
             <div>
@@ -742,18 +830,18 @@ const EnhancedMemosPage = () => {
               <div>
                 <label className="text-sm font-medium text-base-content/70">Author</label>
                 <div className="flex items-center gap-2 mt-1">
-                  <UserAvatar user={selectedMemo.author} size="w-6 h-6" />
-                  <span>{selectedMemo.author?.name || selectedMemo.author?.email}</span>
+                  <UserAvatar user={selectedMemo.createdBy} size="w-6 h-6" />
+                  <span>{selectedMemo.createdBy?.name || selectedMemo.createdBy?.email}</span>
                 </div>
               </div>
 
               <div>
                 <label className="text-sm font-medium text-base-content/70">Recipients</label>
                 <div className="flex items-center gap-1 mt-1">
-                  {selectedMemo.broadcast ? (
+                  {selectedMemo.recipients && selectedMemo.recipients.length > 10 ? (
                     <>
                       <Users className="h-4 w-4 text-primary" />
-                      <span>All Users</span>
+                      <span>All Users ({selectedMemo.recipients.length})</span>
                     </>
                   ) : (
                     <>
@@ -789,21 +877,21 @@ const EnhancedMemosPage = () => {
 
             <div className="flex gap-2 pt-4">
               <button
-                onClick={() => handleMarkAsRead(selectedMemo._id)}
+                onClick={() => handleMarkAsRead(selectedMemo.id || selectedMemo._id)}
                 className="btn btn-sm btn-ghost gap-2"
               >
                 <Eye className="h-4 w-4" />
                 Mark as Read
               </button>
               <button
-                onClick={() => handleAcknowledge(selectedMemo._id)}
+                onClick={() => handleAcknowledge(selectedMemo.id || selectedMemo._id)}
                 className="btn btn-sm btn-ghost gap-2"
               >
                 <CheckCircle className="h-4 w-4" />
                 Acknowledge
               </button>
               <button
-                onClick={() => handleSnooze(selectedMemo._id)}
+                onClick={() => openSnoozeModal(selectedMemo)}
                 className="btn btn-sm btn-ghost gap-2"
               >
                 <VolumeX className="h-4 w-4" />
@@ -813,6 +901,47 @@ const EnhancedMemosPage = () => {
           </div>
         )}
       </Modal>
+
+      {/* Snooze Modal */}
+      <FormModal
+        isOpen={showSnoozeModal}
+        onClose={() => setShowSnoozeModal(false)}
+        title="Snooze Memo"
+        onSubmit={(e) => { e.preventDefault(); handleSnooze(); }}
+        submitText="Snooze"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="label">
+              <span className="label-text">Snooze Duration</span>
+            </label>
+            <select
+              className="select select-bordered w-full"
+              value={snoozeDuration}
+              onChange={(e) => setSnoozeDuration(parseInt(e.target.value))}
+            >
+              <option value={5}>5 minutes</option>
+              <option value={15}>15 minutes</option>
+              <option value={30}>30 minutes</option>
+              <option value={60}>1 hour</option>
+              <option value={120}>2 hours</option>
+              <option value={240}>4 hours</option>
+              <option value={480}>8 hours</option>
+              <option value={1440}>1 day</option>
+            </select>
+          </div>
+
+          {selectedMemo && (
+            <div className="bg-base-200 p-3 rounded">
+              <p className="text-sm font-medium">{selectedMemo.title}</p>
+              <p className="text-xs text-base-content/60 mt-1">
+                This memo will be hidden for {snoozeDuration} minutes and then reappear.
+              </p>
+            </div>
+          )}
+        </div>
+      </FormModal>
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
