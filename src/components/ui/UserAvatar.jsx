@@ -23,7 +23,7 @@ export default function UserAvatar({ user, size = 'w-8 h-8', textSize = 'text-xs
         <div className="p-2 bg-base-100 rounded shadow text-left min-w-[180px]">
             <div className="font-semibold text-base-content">{user.name || user.email}</div>
             <div className="text-xs text-base-content/70">{user.email}</div>
-            {user.role && <div className="text-xs text-base-content/60 mt-1">{user.role}</div>}
+            {user.role && <div className="text-xs text-base-content/60 mt-1">{typeof user.role === 'object' ? user.role.name : user.role}</div>}
         </div>
     );
 

@@ -41,11 +41,16 @@ export function useAdminUsers() {
       // Try multiple endpoints for user creation
       let response;
       try {
-        // First try auth/signup endpoint (admin only)
-        response = await axiosInstance.post('/auth/signup', userData);
-      } catch (signupErr) {
-        // Fallback to auth create endpoint
-        response = await axiosInstance.post('/auth/create', userData);
+        // First try admin/users endpoint (preferred for admin user creation)
+        response = await axiosInstance.post('/admin/users', userData);
+      } catch (adminErr) {
+        try {
+          // Fallback to auth/signup endpoint
+          response = await axiosInstance.post('/auth/signup', userData);
+        } catch (signupErr) {
+          // Final fallback to auth create endpoint
+          response = await axiosInstance.post('/auth/create', userData);
+        }
       }
 
       // Refresh users list

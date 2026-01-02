@@ -18,7 +18,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { axiosInstance } from '../../lib/axios';
 import toast from 'react-hot-toast';
 
-const NotificationCenter = ({ isOpen, onClose }) => {
+const NotificationCenter = ({ isOpen, onClose, onNotificationCountChange }) => {
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(false);
@@ -31,57 +31,98 @@ const NotificationCenter = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
+  // Update notification count when notifications change
+  useEffect(() => {
+    const unreadCount = notifications.filter(n => !n.read).length;
+    if (onNotificationCountChange) {
+      onNotificationCountChange(unreadCount);
+    }
+  }, [notifications, onNotificationCountChange]);
+
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      // For now, create notifications from recent activities
+      // Try to get real notifications from backend
       const [tasksRes, memosRes, messagesRes] = await Promise.all([
-        axiosInstance.get('/tasks').catch(() => ({ data: { tasks: [] } })),
-        axiosInstance.get('/memos/user').catch(() => ({ data: { memos: [] } })),
-        axiosInstance.get('/messages/recent').catch(() => ({ data: { data: { messages: [] } } }))
+        axiosInstance.get('/tasks/user').catch(() =>
+          axiosInstance.get('/tasks').catch(() => ({ data: { data: [] } }))
+        ),
+        axiosInstance.get(`/memos/user/${authUser._id}`).catch(() =>
+          axiosInstance.get('/memos').catch(() => ({ data: { data: [] } }))
+        ),
+        axiosInstance.get('/messages/recent').catch(() => ({ data: { data: [] } }))
       ]);
 
-      const tasks = tasksRes.data.tasks || [];
-      const memos = memosRes.data.memos || [];
-      const messages = messagesRes.data.data?.messages || [];
+      const tasks = tasksRes.data.data || tasksRes.data.tasks || [];
+      const memos = memosRes.data.data || memosRes.data.memos || [];
+      const messages = messagesRes.data.data || messagesRes.data.messages || [];
 
-      const taskNotifications = tasks.slice(0, 3).map(task => ({
-        id: `task-${task._id}`,
-        type: 'task',
-        title: 'Task Update',
-        message: `Task "${task.title}" status: ${task.status}`,
-        timestamp: new Date(task.updatedAt || task.createdAt),
-        read: false,
-        priority: task.priority,
-        actionUrl: `/admin/tasks`
-      }));
+      console.log('Notification data:', { tasks: tasks.length, memos: memos.length, messages: messages.length });
 
-      const memoNotifications = memos.slice(0, 2).map(memo => ({
-        id: `memo-${memo._id}`,
-        type: 'memo',
-        title: 'New Memo',
-        message: memo.title,
-        timestamp: new Date(memo.createdAt),
-        read: memo.readBy?.some(r => r.user === authUser._id) || false,
-        priority: memo.severity,
-        actionUrl: `/admin/memos`
-      }));
+      const allNotifications = [];
 
-      const messageNotifications = messages.slice(0, 2).map(msg => ({
-        id: `message-${msg._id}`,
-        type: 'message',
-        title: 'New Message',
-        message: `Message from ${msg.sender?.name || 'User'}`,
-        timestamp: new Date(msg.createdAt),
-        read: !!msg.readAt,
-        priority: 'medium',
-        actionUrl: `/admin/messages`
-      }));
+      // Recent tasks (last 5)
+      tasks.slice(0, 5).forEach(task => {
+        allNotifications.push({
+          id: `task-${task._id || task.id}`,
+          type: 'task',
+          title: 'Task Assignment',
+          message: `Task "${task.title}" - ${task.status}`,
+          timestamp: new Date(task.updatedAt || task.createdAt),
+          read: false,
+          priority: task.priority || 'medium',
+          actionUrl: `/admin/tasks`
+        });
+      });
 
-      setNotifications([...taskNotifications, ...memoNotifications, ...messageNotifications]);
+      // Recent memos (last 5)
+      memos.slice(0, 5).forEach(memo => {
+        const isRead = memo.readBy?.some(r => r.user === authUser._id) || false;
+        allNotifications.push({
+          id: `memo-${memo._id || memo.id}`,
+          type: 'memo',
+          title: 'New Memo',
+          message: memo.title,
+          timestamp: new Date(memo.createdAt),
+          read: isRead,
+          priority: memo.severity || 'medium',
+          actionUrl: `/admin/memos`
+        });
+      });
+
+      // Recent messages (last 3)
+      messages.slice(0, 3).forEach(msg => {
+        allNotifications.push({
+          id: `message-${msg._id || msg.id}`,
+          type: 'message',
+          title: 'New Message',
+          message: `From ${msg.sender?.name || msg.senderName || 'User'}`,
+          timestamp: new Date(msg.createdAt),
+          read: !!msg.readAt,
+          priority: 'medium',
+          actionUrl: `/admin/messages`
+        });
+      });
+
+      // Sort by timestamp (newest first)
+      allNotifications.sort((a, b) => b.timestamp - a.timestamp);
+
+      setNotifications(allNotifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
-      setNotifications([]);
+      // Fallback to sample notifications
+      setNotifications([
+        {
+          id: 'sample-1',
+          type: 'system',
+          title: 'Welcome to AdminFlow',
+          message: 'Your admin panel is ready to use',
+          timestamp: new Date(),
+          read: false,
+          priority: 'medium',
+          actionUrl: '/admin'
+        }
+      ]);
     } finally {
       setLoading(false);
     }
@@ -101,7 +142,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
   const getNotificationColor = (type, priority) => {
     if (priority === 'high') return 'text-error';
     if (priority === 'medium') return 'text-warning';
-    
+
     const colors = {
       task: 'text-primary',
       memo: 'text-info',
@@ -149,6 +190,14 @@ const NotificationCenter = ({ isOpen, onClose }) => {
     setNotifications(prev => prev.filter(notification => notification.id !== id));
   };
 
+  const handleNotificationClick = (notification) => {
+    markAsRead(notification.id);
+    if (notification.actionUrl) {
+      window.location.href = notification.actionUrl;
+      onClose();
+    }
+  };
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
@@ -194,7 +243,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                 <option value="system">System</option>
                 <option value="user">Users</option>
               </select>
-              
+
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
@@ -234,7 +283,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                   {filteredNotifications.map((notification, index) => {
                     const IconComponent = getNotificationIcon(notification.type);
                     const iconColor = getNotificationColor(notification.type, notification.priority);
-                    
+
                     return (
                       <motion.div
                         key={notification.id}
@@ -242,21 +291,20 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, x: -100 }}
                         transition={{ delay: index * 0.05 }}
-                        className={`p-4 hover:bg-base-200 transition-colors ${
-                          !notification.read ? 'bg-primary/5 border-l-4 border-l-primary' : ''
-                        }`}
+                        className={`p-4 hover:bg-base-200 transition-colors cursor-pointer ${!notification.read ? 'bg-primary/5 border-l-4 border-l-primary' : ''
+                          }`}
+                        onClick={() => handleNotificationClick(notification)}
                       >
                         <div className="flex items-start gap-3">
                           <div className={`p-2 rounded-lg bg-base-200 ${iconColor}`}>
                             <IconComponent className="h-4 w-4" />
                           </div>
-                          
+
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <h4 className={`text-sm font-medium ${
-                                  !notification.read ? 'text-base-content' : 'text-base-content/80'
-                                }`}>
+                                <h4 className={`text-sm font-medium ${!notification.read ? 'text-base-content' : 'text-base-content/80'
+                                  }`}>
                                   {notification.title}
                                 </h4>
                                 <p className="text-xs text-base-content/60 mt-1 line-clamp-2">
@@ -272,7 +320,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                                   )}
                                 </div>
                               </div>
-                              
+
                               <div className="dropdown dropdown-end">
                                 <button
                                   tabIndex={0}
@@ -305,19 +353,8 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                                 </ul>
                               </div>
                             </div>
-                            
-                            {notification.actionUrl && (
-                              <button
-                                onClick={() => {
-                                  // Navigate to action URL
-                                  markAsRead(notification.id);
-                                  onClose();
-                                }}
-                                className="btn btn-xs btn-primary mt-2"
-                              >
-                                View Details
-                              </button>
-                            )}
+
+
                           </div>
                         </div>
                       </motion.div>

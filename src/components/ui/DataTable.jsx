@@ -43,7 +43,7 @@ const DataTable = ({
   // Filter and search data
   const filteredData = useMemo(() => {
     if (!searchTerm) return data;
-    
+
     return data.filter(item =>
       columns.some(column => {
         const value = item[column.key];
@@ -69,7 +69,7 @@ const DataTable = ({
   // Paginate data
   const paginatedData = useMemo(() => {
     if (!pagination) return sortedData;
-    
+
     const startIndex = (currentPage - 1) * pageSize;
     return sortedData.slice(startIndex, startIndex + pageSize);
   }, [sortedData, currentPage, pageSize, pagination]);
@@ -78,7 +78,7 @@ const DataTable = ({
 
   const handleSort = (key) => {
     if (!sortable) return;
-    
+
     setSortConfig(prev => ({
       key,
       direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
@@ -132,7 +132,7 @@ const DataTable = ({
               {selectedRows.size > 0 && ` • ${selectedRows.size} selected`}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {onRefresh && (
               <button
@@ -143,7 +143,7 @@ const DataTable = ({
                 <RefreshCw className="h-4 w-4" />
               </button>
             )}
-            
+
             {onExport && (
               <button
                 onClick={onExport}
@@ -153,7 +153,7 @@ const DataTable = ({
                 <Download className="h-4 w-4" />
               </button>
             )}
-            
+
             {filterable && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -261,14 +261,18 @@ const DataTable = ({
                   )}
                   {columns.map((column) => (
                     <td key={column.key} className={column.className || ''}>
-                      {column.render ? column.render(item[column.key], item) : item[column.key]}
+                      {column.render ? column.render(item[column.key], item) : (
+                        typeof item[column.key] === 'object' && item[column.key] !== null
+                          ? JSON.stringify(item[column.key])
+                          : item[column.key]
+                      )}
                     </td>
                   ))}
                   {actions && (
                     <td>
                       <div className="dropdown dropdown-end">
-                        <button 
-                          tabIndex={0} 
+                        <button
+                          tabIndex={0}
                           className="btn btn-ghost btn-sm"
                           onClick={(e) => {
                             e.preventDefault();
@@ -326,7 +330,7 @@ const DataTable = ({
             <div className="text-sm text-base-content/60">
               Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, sortedData.length)} of {sortedData.length} results
             </div>
-            
+
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(1)}
@@ -335,7 +339,7 @@ const DataTable = ({
               >
                 <ChevronsLeft className="h-4 w-4" />
               </button>
-              
+
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
@@ -343,7 +347,7 @@ const DataTable = ({
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              
+
               <div className="flex items-center gap-1">
                 {[...Array(Math.min(5, totalPages))].map((_, i) => {
                   const pageNum = i + 1;
@@ -358,7 +362,7 @@ const DataTable = ({
                   );
                 })}
               </div>
-              
+
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
@@ -366,7 +370,7 @@ const DataTable = ({
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
-              
+
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages}

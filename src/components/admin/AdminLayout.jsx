@@ -91,13 +91,13 @@ export default function AdminLayout() {
       {/* Modern Sidebar navigation */}
       <div
         className={`w-72 transform bg-gradient-to-b from-base-200 to-base-300 border-r border-base-300 shadow-xl transition-transform duration-300 ease-in-out 
-          fixed top-0 inset-y-0 left-0 z-50 
+          fixed top-0 inset-y-0 left-0 z-40 
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
         aria-label="Admin sidebar navigation"
       >
-        <div className="flex h-full flex-col">
-         {/* Mobile close button */}
-                                   {/* <button
+        <div className="flex h-full flex-col pt-16">
+          {/* Mobile close button */}
+          {/* <button
                                      onClick={toggleMobileMenu}
                                      className="absolute top-8 right-4 rounded-md p-2 text-base-content/60 hover:bg-base-300 md:hidden transition-colors"
                                      aria-label="Close sidebar"
@@ -166,7 +166,7 @@ export default function AdminLayout() {
       {!mobileMenuOpen && (
         <button
           onClick={toggleMobileMenu}
-          className="fixed top-4 left-4 z-50 p-3 rounded-lg shadow-lg bg-primary text-white md:hidden hover:bg-primary/90 transition-colors"
+          className="fixed top-4 left-4 z-40 p-3 rounded-lg shadow-lg bg-primary text-white md:hidden hover:bg-primary/90 transition-colors"
           aria-label="Open sidebar"
         >
           <Menu className="w-5 h-5" />

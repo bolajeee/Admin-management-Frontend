@@ -154,7 +154,26 @@ const EnhancedEmployeesPage = () => {
   const handleEditUser = async (e) => {
     e.preventDefault();
     try {
-      await updateUser(selectedUser._id, formData);
+      // Convert role name back to role ID
+      let roleId = formData.role;
+
+      // Find role ID by name from roleMap
+      const roleEntry = Object.entries(roleMap).find(([id, name]) => name === formData.role);
+      if (roleEntry) {
+        roleId = roleEntry[0]; // Use the role ID
+      }
+
+      // Prepare the data with proper field mapping
+      const updateData = {
+        fullName: formData.name,
+        email: formData.email,
+        role: roleId,
+        department: formData.department,
+        phone: formData.phone,
+        isActive: formData.status === 'active'
+      };
+
+      await updateUser(selectedUser._id, updateData);
       setShowEditModal(false);
       setSelectedUser(null);
       toast.success('User updated successfully');
@@ -185,10 +204,19 @@ const EnhancedEmployeesPage = () => {
 
   const openEditModal = (user) => {
     setSelectedUser(user);
+
+    // Get role name for the select dropdown
+    let roleName = 'employee'; // default
+    if (typeof user.role === 'object' && user.role?.name) {
+      roleName = user.role.name;
+    } else if (typeof user.role === 'string') {
+      roleName = roleMap[user.role] || user.role;
+    }
+
     setFormData({
       name: user.name || '',
       email: user.email || '',
-      role: user.role || 'employee',
+      role: roleName,
       department: user.department || '',
       phone: user.phone || '',
       status: user.isActive ? 'active' : 'inactive'
@@ -224,7 +252,7 @@ const EnhancedEmployeesPage = () => {
             Manage user accounts, roles, and permissions
           </p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={handleImport}
@@ -233,7 +261,7 @@ const EnhancedEmployeesPage = () => {
             <Upload className="h-4 w-4" />
             Import
           </button>
-          
+
           <button
             onClick={handleExport}
             className="btn btn-ghost btn-sm gap-2"
@@ -241,7 +269,7 @@ const EnhancedEmployeesPage = () => {
             <Download className="h-4 w-4" />
             Export
           </button>
-          
+
           <button
             onClick={() => setShowAddModal(true)}
             className="btn btn-primary btn-sm gap-2"
