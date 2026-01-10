@@ -117,7 +117,7 @@ The application can be configured through various environment variables:
 - `VITE_CLOUDINARY_URL`: Cloudinary upload URL (for images)
 - `VITE_SMS_API_KEY`: SMS service API key
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
@@ -125,16 +125,20 @@ The application can be configured through various environment variables:
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 👥 Authors
+## Authors
 
 - Initial work - [bolajeee](https://github.com/bolajeee)
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Thanks to all contributors who have helped shape this project
 - Inspiration from modern admin dashboard designs
 - Open source community for the amazing tools and libraries
+
+## walkthrough Video Link:
+- https://youtu.be/6I7zhrlT-9s
+- https://youtu.be/g5bCYRDZJSY
