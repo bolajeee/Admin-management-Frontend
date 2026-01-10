@@ -2,7 +2,7 @@
 
 A modern, responsive admin management system built with React, Vite, and TailwindCSS. This application provides a comprehensive interface for both administrators and users to manage tasks, memos, messages, and administrative functions.
 
-## 🚀 Features
+##  Features
 
 ### Authentication & Authorization
 - Secure user authentication system
@@ -54,7 +54,7 @@ A modern, responsive admin management system built with React, Vite, and Tailwin
 - Theme customization
 - Notification settings
 
-## 🛠️ Technical Stack
+## Technical Stack
 
 - **Framework:** React with Vite
 - **Styling:** TailwindCSS
@@ -64,7 +64,7 @@ A modern, responsive admin management system built with React, Vite, and Tailwin
 - **HTTP Client:** Axios
 - **UI Components:** Custom components with TailwindCSS
 
-## 📦 Project Structure
+## Project Structure
 
 ```
 src/
@@ -85,7 +85,7 @@ src/
 └── utils/            # Utility functions
 ```
 
-## 🚀 Getting Started
+##  Getting Started
 
 1. **Clone the repository**
 ```bash
@@ -109,7 +109,7 @@ VITE_API_URL=your_backend_api_url
 npm run dev
 ```
 
-## 🔧 Configuration
+##  Configuration
 
 The application can be configured through various environment variables:
 
