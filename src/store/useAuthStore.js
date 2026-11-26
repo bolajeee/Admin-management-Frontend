@@ -30,7 +30,7 @@ export const useAuthStore = create(
             authUser: user,
             isCheckingAuth: false 
           });
-        } catch (error) {
+        } catch {
           set({ 
             authUser: null,
             isCheckingAuth: false 
@@ -57,7 +57,7 @@ export const useAuthStore = create(
           await axiosInstance.post("/auth/logout");
           set({ authUser: null });
           toast.success("Logout successful");
-        } catch (error) {
+        } catch {
           toast.error("Logout failed");
         }
       },
@@ -131,7 +131,7 @@ export const useAuthStore = create(
             authUser: state.authUser?._id === userId ? null : state.authUser,
           }));
           toast.success("User deleted successfully");
-        } catch (error) {
+        } catch {
           toast.error("Failed to delete user");
           set({ isDeletingUser: false });
         }

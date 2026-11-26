@@ -15,7 +15,6 @@ const reportService = {
           'Content-Type': 'multipart/form-data'
         },
         onUploadProgress: onProgress ? (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           onProgress(progressEvent);
         } : undefined
       });

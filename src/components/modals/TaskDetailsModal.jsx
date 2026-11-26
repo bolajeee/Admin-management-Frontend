@@ -20,7 +20,6 @@ function TaskDetailsModal({ task, onClose, onDelete, users, getUserById, setUser
   const [attachmentError, setAttachmentError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const backendUrl = 'http://localhost:5000';
 
   useEffect(() => {
     if (task.deleted) {
@@ -65,7 +64,7 @@ function TaskDetailsModal({ task, onClose, onDelete, users, getUserById, setUser
       setLoadingComments(true);
       const newComments = await getTaskComments(task._id);
       setComments(newComments);
-    } catch (err) {
+    } catch {
       setCommentError('Failed to add comment');
     } finally {
       setSubmittingComment(false);
@@ -84,7 +83,7 @@ function TaskDetailsModal({ task, onClose, onDelete, users, getUserById, setUser
       setLoadingAttachments(true);
       const newFiles = await listTaskAttachments(task._id);
       setAttachments(newFiles);
-    } catch (err) {
+    } catch {
       setAttachmentError('Failed to upload attachment');
     } finally {
       setUploadingAttachment(false);
@@ -100,7 +99,7 @@ function TaskDetailsModal({ task, onClose, onDelete, users, getUserById, setUser
       setLoadingAttachments(true);
       const newFiles = await listTaskAttachments(task._id);
       setAttachments(newFiles);
-    } catch (err) {
+    } catch {
       setAttachmentError('Failed to delete attachment');
     } finally {
       setLoadingAttachments(false);

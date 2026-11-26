@@ -7,8 +7,6 @@ import {
   User, UserCog, Mail, ClipboardList, FileText, Trash2, Plus
 } from 'lucide-react';
 import { useThemeStore } from '../../store/useThemeStore';
-import { useAuthStore } from '../../store/useAuthStore';
-import { useNavigate } from 'react-router-dom';
 import { Tab } from '@headlessui/react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../../components/modals/ConfirmationModal';
@@ -47,11 +45,9 @@ export default function EmployeesPage() {
   };
 
   const { theme } = useThemeStore();
-  const navigate = useNavigate();
-  const { deleteUser } = useAuthStore();
 
   const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState([
+  const [roles] = useState([
     { _id: 'employee', name: 'employee', description: 'Can view and manage their own tasks and memos.' },
     { _id: 'admin', name: 'admin', description: 'Can manage all users, tasks, and memos.' }
   ]);
@@ -100,7 +96,7 @@ export default function EmployeesPage() {
     fetchData();
   }, []);
 
-  const handleDeleteUser = (userId, userName) => {
+  const handleDeleteUser = (userId) => {
     setSelectedUser(users.find(u => u._id === userId));
     setShowDeleteModal(true);
   };
@@ -130,7 +126,7 @@ export default function EmployeesPage() {
     try {
       await axiosInstance.patch(`/admin/users/${userId}/toggle-active`);
       toast.success(`User ${!currentStatus ? 'activated' : 'deactivated'} successfully.`);
-    } catch (error) {
+    } catch {
       setUsers(users.map(u => u._id === userId ? { ...u, active: currentStatus } : u));
       toast.error('Failed to update user status.');
     }

@@ -170,8 +170,7 @@ export default function MemosPage() {
   const [memoTitle, setMemoTitle] = useState("");
   const [memoText, setMemoText] = useState("");
   const [sendingMemo, setSendingMemo] = useState(false);
-  const usersCount = users.length;
-  const [acknowledgedMemos, setAcknowledgedMemos] = useState([]);
+  const [acknowledgedMemos] = useState([]);
 
 
   const [showSnoozeModal, setShowSnoozeModal] = useState(false);
@@ -189,7 +188,7 @@ export default function MemosPage() {
       setSnoozingMemoId(null);
       getMemos();
       toast.success('Memo snoozed!');
-    } catch (e) {
+    } catch {
       toast.error('Failed to snooze memo.');
     } finally {
       setSnoozing(false);
@@ -202,7 +201,7 @@ export default function MemosPage() {
       await axiosInstance.put(`/memos/${memoId}`, { status: newStatus });
       getMemos();
       toast.success('Memo status updated!');
-    } catch (e) {
+    } catch {
       toast.error('Failed to update status.');
     } finally {
       setStatusUpdating(s => ({ ...s, [memoId]: false }));
@@ -311,7 +310,6 @@ export default function MemosPage() {
               {userMemos.map((memo) => {
                 const snoozeAck = memo.acknowledgments?.find(a => a.user === selectedUser._id && a.status === 'snoozed');
                 const statusProps = getMemoStatusProps(memo, snoozeAck);
-                const isDeleted = memo.status === 'deleted';
                 
                 return (
                   <li 

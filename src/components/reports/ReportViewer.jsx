@@ -119,7 +119,7 @@ const ReportViewer = ({ reportId }) => {
     }
   };
   
-  const handleTableChange = (pagination, filters, sorter) => {
+  const handleTableChange = (pagination) => {
     setPagination({
       current: pagination.current,
       pageSize: pagination.pageSize

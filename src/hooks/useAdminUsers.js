@@ -12,7 +12,7 @@ export function useAdminUsers() {
       try {
         const res = await axiosInstance.get('/admin/users');
         setUsers(res.data.data.users || []);
-      } catch (err) {
+      } catch {
         setError('Failed to fetch users');
       } finally {
         setIsLoading(false);

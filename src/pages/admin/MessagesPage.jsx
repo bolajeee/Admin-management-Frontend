@@ -36,7 +36,6 @@ export default function MessagesPage() {
       detailsModalOpen,
       setDetailsModalOpen,
       detailsUser,
-      setDetailsUser,
       detailsLoading,
       userStats,
       filteredUsers,

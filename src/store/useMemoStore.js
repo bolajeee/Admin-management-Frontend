@@ -132,7 +132,7 @@ export const useMemoStore = create((set, get) => ({
     }
   },
 
-  markMemoAsReadApi: async (memoId, userId) => {
+  markMemoAsReadApi: async (memoId) => {
     try {
       await axiosInstance.patch(`/memos/${memoId}/read`);
       toast.success('Memo marked as read!');

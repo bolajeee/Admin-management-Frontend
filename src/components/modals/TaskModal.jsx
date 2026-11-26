@@ -35,7 +35,6 @@ export default function TaskModal({
 
   const [activeTab, setActiveTab] = useState('details');
   const [newComment, setNewComment] = useState('');
-  const [attachmentFile, setAttachmentFile] = useState(null);
 
   useEffect(() => {
     setFormData({

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Row, Col, Tabs, DatePicker, Select, Button, message, Spin } from 'antd';
 import { DownloadOutlined, ReloadOutlined, FilterOutlined } from '@ant-design/icons';
-import { useTheme } from '../../utils/themeUtils';
 import MetricCard from './MetricCard';
 import DateRangeSelector from './DateRangeSelector';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -11,7 +10,6 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const FinancialReports = () => {
-  const { theme, isDark, styles } = useTheme();
   const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState([
     new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
@@ -59,7 +57,7 @@ const FinancialReports = () => {
     }
   };
 
-  const fetchFinancialData = async (dates) => {
+  const fetchFinancialData = async () => {
     setLoading(true);
     try {
       // TODO: Replace with actual API call
