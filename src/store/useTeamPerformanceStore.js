@@ -1,7 +1,5 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import reportService from '../services/reportService';
-import { useEffect } from 'react';
 
 const initialState = {
   // Data state

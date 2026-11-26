@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useTaskStore } from '../store/useTaskStore';
 import { ScrollText, Loader2, CheckCircle, Clock, Trash2, XCircle } from 'lucide-react';

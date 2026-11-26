@@ -3,7 +3,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import UserAvatar from '../ui/UserAvatar';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 
-const KanbanBoard = ({ tasks, onDragEnd, users, getUserById, onViewTask, isLoading }) => {
+const KanbanBoard = ({ tasks, onDragEnd, getUserById, onViewTask, isLoading }) => {
   const columns = {
     todo: {
       name: 'To Do',

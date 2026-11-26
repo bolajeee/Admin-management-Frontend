@@ -1,9 +1,7 @@
 import React from "react";
-import { useThemeStore } from '../../store/useThemeStore';
 
 export function Card({ children, className = "", ...props }) {
-    const { theme } = useThemeStore();
-    
+      
     // Use DaisyUI theme variables instead of hardcoded colors
     return (
         <div 

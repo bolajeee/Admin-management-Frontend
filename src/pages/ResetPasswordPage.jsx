@@ -24,7 +24,7 @@ const ResetPasswordPage = () => {
       await axiosInstance.post(`/api/auth/reset-password/${token}`, { password });
       toast.success("Password has been reset successfully. You can now log in with your new password.");
       navigate("/login");
-    } catch (error) {
+    } catch {
       toast.error("Failed to reset password. The link may have expired.");
     } finally {
       setIsResetting(false);

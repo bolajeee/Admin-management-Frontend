@@ -17,10 +17,6 @@ const DateRangeSelector = ({ value, onChange }) => {
         const start = new Date();
         start.setDate(start.getDate() - days);
         
-        // Convert to dayjs first for Ant Design
-        const dayjsStart = dayjs(start);
-        const dayjsEnd = dayjs(end);
-        
         // Call onChange with native Date objects for compatibility with the rest of the app
         onChange([start, end]);
     };

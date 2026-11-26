@@ -62,7 +62,7 @@ const LoginPage = () => {
       toast.success("An email has been sent with instructions to reset your password.");
       setShowForgotPasswordModal(false);
       setForgotPasswordEmail("");
-    } catch (error) {
+    } catch {
       toast.error("Failed to send password reset email. Please try again.");
     } finally {
       setIsSendingPasswordReset(false);

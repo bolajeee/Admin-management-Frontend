@@ -19,10 +19,10 @@ export default function TasksPage() {
   const { authUser } = useAuthStore();
   const {
     tasks, isTasksLoading, getTasks, createTask, updateTask, deleteTask,
-    updateTaskStatus, updateTaskPriority, updateTaskCategory,
+    updateTaskStatus,
     taskActionLoading
   } = useTaskStore();
-  const { users, isUsersLoading, getUsers } = useChatStore();
+  const { users, getUsers } = useChatStore();
 
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [submittingTask, setSubmittingTask] = useState(false);
@@ -57,17 +57,6 @@ export default function TasksPage() {
     setShowTaskModal(true);
   };
 
-  const handleOpenEdit = (task) => {
-    if (!task || !task._id) {
-      alert('Invalid task selected for editing.');
-      console.warn('Edit handler: No valid task._id', task);
-      return;
-    }
-    console.log('Opening edit modal for task:', task._id);
-    setModalMode('edit');
-    setModalTask(task);
-    setShowTaskModal(true);
-  };
 
   const handleCreateTask = async (taskData) => {
     try {

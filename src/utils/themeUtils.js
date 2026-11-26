@@ -64,13 +64,13 @@ const STYLE_PRESETS = {
       loading: 'opacity-70 cursor-wait',
     };
   },
-  input: (theme) => ({
+  input: () => ({
     base: 'w-full rounded-md border border-base-300 bg-base-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50',
     disabled: 'bg-base-200 cursor-not-allowed opacity-70',
     error: 'border-error focus:ring-error/50',
     success: 'border-success focus:ring-success/50',
   }),
-  badge: (theme) => ({
+  badge: () => ({
     base: 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
     variant: {
       default: 'bg-base-200 text-base-content',
@@ -81,7 +81,7 @@ const STYLE_PRESETS = {
       info: 'bg-info/10 text-info',
     },
   }),
-  alert: (theme) => ({
+  alert: () => ({
     base: 'rounded-lg p-4',
     variant: {
       info: 'bg-info/10 text-info-content border border-info/20',

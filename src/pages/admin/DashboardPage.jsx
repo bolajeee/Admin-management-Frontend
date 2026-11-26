@@ -18,7 +18,6 @@ import QuickActions from '../../components/dashboard/QuickActions';
 import MemoModal from '../../components/modals/MemoModal';
 import TaskModal from '../../components/modals/TaskModal';
 import { useTaskStore } from '../../store/useTaskStore';
-import { useAuthStore } from '../../store/useAuthStore';
 import { useChatStore } from '../../store/useChatStore';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Cell, RadialBarChart, RadialBar } from 'recharts';
 import { Clock, User, CheckSquare, Bell, MessageSquare } from 'lucide-react';
@@ -60,10 +59,9 @@ function DashboardPage() {
 
   // Get task creation function from store
   const createTask = useTaskStore((state) => state.createTask);
-  const authUser = useAuthStore((state) => state.authUser);
 
   // For the task modal - we need the users list
-  const { users, getUsers, isUsersLoading } = useChatStore();
+  const { users, getUsers } = useChatStore();
 
   // Fetch dashboard data on mount
   useEffect(() => {
@@ -94,10 +92,10 @@ function DashboardPage() {
             messagesToday: messagesResponse.data.count
           }));
         }
-      } catch (msgError) {
+      } catch {
         toast.error('Error getting today messages count:');
       }
-    } catch (error) {
+    } catch {
       toast.error('Error fetching dashboard stats:');
     } finally {
       setLoading(false);
@@ -109,7 +107,7 @@ function DashboardPage() {
     try {
       const response = await axiosInstance.get('/admin/suggested-actions');
       setActions(response.data.actions);
-    } catch (error) {
+    } catch {
       toast.error('Error fetching suggested actions:');
       setActions([]);
     } finally {
@@ -126,7 +124,7 @@ function DashboardPage() {
       ]);
       setTasksCompletedData(tasksRes.data.data || []);
       setMemosReadData(memosRes.data.data || []);
-    } catch (err) {
+    } catch {
       toast.error('Error fetching analytics data:');
       setTasksCompletedData([]);
       setMemosReadData([]);
@@ -140,7 +138,7 @@ function DashboardPage() {
     try {
       const res = await axiosInstance.get('/dashboard/recent-activity');
       setRecentActivity(res.data.data || []);
-    } catch (err) {
+    } catch {
       toast.error('Error fetching recent activity:');
       setRecentActivity([]);
     } finally {
@@ -179,7 +177,7 @@ function DashboardPage() {
 
       // Refresh dashboard stats to show the new memo count
       fetchDashboardStats();
-    } catch (error) {
+    } catch {
       toast.error('Failed to send memo. Please try again.');
     } finally {
       setSendingMemo(false);

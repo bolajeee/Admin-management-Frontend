@@ -35,7 +35,7 @@ export const useTaskStore = create((set, get) => ({
             // Normalize _id for all user tasks
             set({ userTasks: res.data.data.map(t => ({ ...t, _id: t._id || t.id })) });
             toast.success("User tasks fetched successfully");
-        } catch (error) {
+        } catch {
             set({ userTasks: [] });
             toast.error("Error fetching user tasks");
         } finally {
@@ -143,7 +143,7 @@ export const useTaskStore = create((set, get) => ({
             await axiosInstance.delete(`/tasks/${taskId}`);
             set(state => ({ tasks: state.tasks.filter(t => t._id !== taskId) }));
             toast.success("Task deleted");
-        } catch (error) {
+        } catch {
             toast.error("Error deleting task");
         } finally {
             set(state => ({ taskActionLoading: { ...state.taskActionLoading, [taskId]: false } }));
@@ -161,7 +161,7 @@ export const useTaskStore = create((set, get) => ({
         try {
             await axiosInstance.post(`/tasks/${taskId}/comments`, { comment });
             toast.success("Comment added");
-        } catch (error) {
+        } catch {
             toast.error("Error adding comment");
         } finally {
             set(state => ({ taskActionLoading: { ...state.taskActionLoading, [taskId + '_comment']: false } }));
@@ -171,7 +171,7 @@ export const useTaskStore = create((set, get) => ({
         try {
             const res = await axiosInstance.get(`/tasks/${taskId}/comments`);
             return res.data;
-        } catch (error) {
+        } catch {
             toast.error("Error fetching comments");
             return [];
         }
@@ -187,7 +187,7 @@ export const useTaskStore = create((set, get) => ({
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             toast.success("Attachment uploaded");
-        } catch (error) {
+        } catch {
             toast.error("Error uploading attachment");
         } finally {
             set(state => ({ taskActionLoading: { ...state.taskActionLoading, [taskId + '_attach']: false } }));
@@ -197,7 +197,7 @@ export const useTaskStore = create((set, get) => ({
         try {
             const res = await axiosInstance.get(`/tasks/${taskId}/attachments`);
             return res.data;
-        } catch (error) {
+        } catch {
             toast.error("Error fetching attachments");
             return [];
         }
@@ -207,7 +207,7 @@ export const useTaskStore = create((set, get) => ({
         try {
             await axiosInstance.delete(`/tasks/${taskId}/attachments/${attachmentId}`);
             toast.success("Attachment deleted");
-        } catch (error) {
+        } catch {
             toast.error("Error deleting attachment");
         } finally {
             set(state => ({ taskActionLoading: { ...state.taskActionLoading, [taskId + '_attach']: false } }));
@@ -222,7 +222,7 @@ export const useTaskStore = create((set, get) => ({
         try {
             await axiosInstance.post(`/tasks/${taskId}/memos/${memoId}`);
             toast.success("Memo linked to task");
-        } catch (error) {
+        } catch {
             toast.error("Error linking memo");
         }
     },
@@ -230,7 +230,7 @@ export const useTaskStore = create((set, get) => ({
         try {
             await axiosInstance.delete(`/tasks/${taskId}/memos/${memoId}`);
             toast.success("Memo unlinked from task");
-        } catch (error) {
+        } catch {
             toast.error("Error unlinking memo");
         }
     },
@@ -240,7 +240,7 @@ export const useTaskStore = create((set, get) => ({
         try {
             await axiosInstance.patch(`/tasks/${taskId}/delegate`, { assignee: newAssigneeId });
             toast.success("Task delegated");
-        } catch (error) {
+        } catch {
             toast.error("Error delegating task");
         }
     },
@@ -251,7 +251,7 @@ export const useTaskStore = create((set, get) => ({
         try {
             const res = await axiosInstance.get('/tasks/search/advanced', { params: query });
             set({ tasks: res.data });
-        } catch (error) {
+        } catch {
             toast.error("Error searching tasks");
         } finally {
             set({ isTasksLoading: false });
@@ -263,7 +263,7 @@ export const useTaskStore = create((set, get) => ({
         try {
             const res = await axiosInstance.get(`/tasks/${taskId}/audit`);
             return res.data;
-        } catch (error) {
+        } catch {
             toast.error("Error fetching audit log");
             return [];
         }
